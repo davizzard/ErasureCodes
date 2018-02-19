@@ -1,0 +1,335 @@
+The language was announced in November 2009. It is used in some of Google's production systems, as well as by other firms.[15]
+
+Two major implementations exist:
+
+    Google's Go compiler, "gc", is developed as open source software and targets various platforms including Linux, OS X, Windows, various BSD and Unix versions, and also, since 2015, mobile devices, including smartphones.[16]
+    A second compiler, gccgo, is a GCC frontend.[17][18]
+
+The "gc" toolchain has been self-hosting since version 1.5.[19]
+
+Go originated as an experiment by Google engineers Robert Griesemer, Rob Pike, and Ken Thompson to design a new programming language that would resolve common criticisms of other languages while maintaining their positive characteristics. The new language was to include the following features:[20]
+
+    be statically typed, scalable to large systems (as Java and C++)
+    be productive and readable, without too many mandatory keywords and repetition[21] ("light on the page" like dynamic languages)
+    not require integrated development environments, but support them well
+    support networking and multiprocessing
+
+In later interviews, all three of the language designers cited their shared dislike of C++'s complexity as a primary motivation for designing a new language.[22][23][24]
+
+Go 1.0 was released in March 2012.[25]
+Language design
+
+Go is recognizably in the tradition of C, but makes many changes to improve brevity, simplicity, and safety. Go consists of,
+
+    A syntax and environment adopting patterns more common in dynamic languages:[26]
+        Optional concise variable declaration and initialization through type inference (x := 0 not int x = 0; or var x = 0;).
+        Fast compilation times.[27]
+        Remote package management (go get)[28] and online package documentation.[29]
+    Distinctive approaches to particular problems:
+        Built-in concurrency primitives: light-weight processes (goroutines), channels, and the select statement.
+        An interface system in place of virtual inheritance, and type embedding instead of non-virtual inheritance.
+        A toolchain that, by default, produces statically linked native binaries without external dependencies.
+    A desire to keep the language specification simple enough to hold in a programmer's head,[30] in part by omitting features common to similar languages.
+
+Syntax
+
+Go's syntax includes changes from C aimed at keeping code concise and readable. A combined declaration/initialization operator was introduced that allows the programmer to write i := 3 or s := "Hello, world!", without specifying the types of variables. This contrasts with C's int i = 3; and const char *s = "Hello, world!";. Semicolons still terminate statements, but are implicit when the end of a line occurs. Functions may return multiple values, and returning a result, err pair is the conventional way a function indicates an error to its caller in Go.[a] Go adds literal syntaxes for initializing struct parameters by name, and for initializing maps and slices. As an alternative to C's three-statement for loop, Go's range expressions allow concise iteration over arrays, slices, strings, maps, and channels.[citation needed]
+Types
+
+Go has a number of built-in types, including numeric ones (byte, int64, float32, etc.), booleans, and character strings (string). Strings are immutable; built-in operators and keywords (rather than functions) provide concatenation, comparison, and UTF-8 encoding and decoding.[31] Record types can be defined with the struct keyword.[citation needed]
+
+For each type T and each non-negative integer constant n, there is an array type denoted [n]T; arrays of differing lengths are thus of different types. Dynamic arrays are available as "slices", denoted []T for some type T. These have a length and a capacity specifying when new memory needs to be allocated to expand the array. Several slices may share their underlying memory.[32][33][34]
+
+Pointers are available for all types, and the pointer-to-T type is denoted *T. Address-taking and indirection use the & and * operators as in C, or happen implicitly through the method call or attribute access syntax.[35] There is no pointer arithmetic, except via the special unsafe.Pointer type in the standard library.[citation needed]
+
+For a pair of types K, V, the type map[K]V is the type of hash tables mapping type-K keys to type-V values. Hash tables are built into the language, with special syntax and built-in functions. chan T is a channel that allows sending values of type T between concurrent Go processes.[citation needed]
+
+Aside from its support for interfaces, Go's type system is nominal: the type keyword can be used to define a new named type, which is distinct from other named types that have the same layout (in the case of a struct, the same members in the same order). Some conversions between types (e.g., between the various integer types) are pre-defined and adding a new type may define additional conversions, but conversions between named types must always be invoked explicitly.[36] For example, the type keyword can be used to define a type for IPv4 addresses, which are 32-bit unsigned integers.[citation needed]
+
+type ipv4addr uint32
+
+With this type definition, ipv4addr(x) interprets the uint32 value x as an IP address. Simply assigning x to a variable of type ipv4addr is a type error.[citation needed]
+
+Constant expressions may be either typed or "untyped"; they are given a type when assigned to a typed variable if the value they represent passes a compile-time check.[37]
+
+Function types are indicated by the func keyword; they take zero or more parameters and return zero or more values, all of which are typed. The parameter and return values determine a function type; thus, func(string, int32) (int, error) is the type of functions that take a string and a 32-bit signed integer, and return a signed integer (of default width) and a value of the built-in interface type error.[citation needed]
+
+Any named type has a method set associated with it. The IP address example above can be extended with a method for checking if its value is a known standard.
+
+// ZeroBroadcast reports whether addr is 255.255.255.255.
+func (addr ipv4addr) ZeroBroadcast() bool {
+    return addr == 0xFFFFFFFF
+}
+
+Due to nominal typing, this method definition adds a method to ipv4addr, but not on uint32. While methods have special definition and call syntax, there is no distinct method type.[38]
+Interface system
+
+Go provides two features that replace class inheritance.[citation needed]
+
+The first is embedding, which can be viewed as an automated form of composition[39] or delegation.[40]:255
+
+The second are its interfaces, which provides runtime polymorphism.[41]:266 Interfaces provide a limited form of structural typing in the otherwise nominal type system of Go. Any type that implements all methods of an interface conforms to that interface. Go interfaces were designed after protocols from the Smalltalk programming language.[42] Multiple sources use the term duck typing when describing Go interface.[43][44] Although the term duck typing is not precisely defined and therefore not wrong, it usually implies that type conformance is not statically checked. Since conformance to a Go interface is checked statically by the Go compiler (except when performing a type assertion), the Go authors prefer to use the term structural typing.[citation needed]
+
+An interface specifies a set of types by listing required methods and their types and is satisfied by any type that has the required methods. Implementing types do not need to specify their implementing of interfaces, so if Shape, Square and Circle are defined as:
+
+import "math"
+
+type Shape interface {
+    Area() float64
+}
+
+type Square struct { // Note: no "implements" declaration
+    side float64
+}
+
+func (sq Square) Area() float64 { return sq.side * sq.side }
+
+type Circle struct { // No "implements" declaration here either
+    radius float64
+}
+
+func (c Circle) Area() float64 { return math.Pi * math.Pow(c.radius, 2) }
+
+Both Square and Circle are implicitly a Shape and can be assigned to a Shape-typed variable.[41]:263–268 In formal language, Go's interface system provides structural rather than nominal typing. Interfaces can embed other interfaces with the effect of creating a combined interface that is satisfied by exactly the types that implement the embedded interface and any methods that the newly defined interface adds.[41]:270
+
+The Go standard library uses interfaces to provide genericity in several places, including the input/output system that is based on the concepts of Reader and Writer.[41]:282–283
+
+Besides calling methods via interfaces, Go allows converting interface values to other types with a run-time type check. The language constructs to do so are the type assertion,[45] which checks against a single potential type, and the type switch,[46] which checks against multiple types.[citation needed]
+
+The empty interface interface{} is an important corner case because it can refer to an item of any concrete type. It is similar to the Object class in Java or C#, but with the difference that the empty interface is satisfied by any type, including built-in types like int (while in Java and C#, an Object variable can only hold instances of reference type).[41]:284 Code using the empty interface cannot simply call methods (or built-in operators) on the referred-to object, but it can store the interface{} value, try to convert it to a more useful type via a type assertion or type switch, or inspect it with Go's reflect package.[47] Because interface{} can refer to any value, it is a limited way to escape the restrictions of static typing, like void* in C but with additional run-time type checks.[citation needed]
+
+Interface values are implemented using pointer to data and a second pointer to run-time type information.[48] Like some other types implemented using pointers in Go, interface values are nil if uninitialized.[49]
+Package system
+
+In Go's package system, each package has a path (e.g., "compress/bzip2" or "golang.org/x/net/html") and a name (e.g., bzip2 or html). References to other packages' definitions must always be prefixed with the other package's name, and only the capitalized names from other packages are accessible: io.Reader is public but bzip2.reader is not.[50] The go get command can retrieve packages stored in a remote repository such as GitHub.,[51] and developers are encouraged to develop packages inside a base path corresponding to a source repository (such as github.com/user_name/package_name) to reduce the likelihood of name collision with future additions to the standard library or other external libraries.[52]
+
+Proposals exist to introduce a proper package management solution for Go similar to Rust's cargo system or Node's npm system.[53]
+Concurrency: goroutines and channels
+
+The Go language has built-in facilities, as well as library support, for writing concurrent programs. Concurrency refers not only to CPU parallelism, but also to asynchrony: letting slow operations like a database or network-read run while the program does other work, as is common in event-based servers.[54]
+
+The primary concurrency construct is the goroutine, a type of light-weight process. A function call prefixed with the go keyword starts a function in a new goroutine. The language specification does not specify how goroutines should be implemented, but current implementations multiplex a Go process's goroutines onto a smaller set of operating system threads, similar to the scheduling performed in Erlang.[55]:10
+
+While a standard library package featuring most of the classical concurrency control structures (mutex locks, etc.) is available,[55]:151–152 idiomatic concurrent programs instead prefer channels, which provide send messages between goroutines.[56] Optional buffers store messages in FIFO order[40]:43 and allow sending goroutines to proceed before their messages are received.[citation needed]
+
+Channels are typed, so that a channel of type chan T can only be used to transfer messages of type T. Special syntax is used to operate on them; <-ch is an expression that causes the executing goroutine to block until a value comes in over the channel ch, while ch <- x sends the value x (possibly blocking until another goroutine receives the value). The built-in switch-like select statement can be used to implement non-blocking communication on multiple channels; see below for an example. Go has a memory model describing how goroutines must use channels or other operations to safely share data.[57]
+
+The existence of channels sets Go apart from actor model-style concurrent languages like Erlang, where messages are addressed directly to actors (corresponding to goroutines). The actor style can be simulated in Go by maintaining a one-to-one correspondence between goroutines and channels, but the language allows multiple goroutines to share a channel or a single goroutine to send and receive on multiple channels.[55]:147
+
+From these tools one can build concurrent constructs like worker pools, pipelines (in which, say, a file is decompressed and parsed as it downloads), background calls with timeout, "fan-out" parallel calls to a set of services, and others.[58] Channels have also found uses further from the usual notion of interprocess communication, like serving as a concurrency-safe list of recycled buffers,[59] implementing coroutines (which helped inspire the name goroutine),[60] and implementing iterators.[61]
+
+Concurrency-related structural conventions of Go (channels and alternative channel inputs) are derived from Tony Hoare's communicating sequential processes model. Unlike previous concurrent programming languages such as Occam or Limbo (a language on which Go co-designer Rob Pike worked),[62] Go does not provide any built-in notion of safe or verifiable concurrency.[63] While the communicating-processes model is favored in Go, it is not the only one: all goroutines in a program share a single address space. This means that mutable objects and pointers can be shared between goroutines; see § Lack of race condition safety, below.[citation needed]
+Suitability for parallel programming
+
+Although Go's concurrency features are not aimed primarily at parallel processing,[54] they can be used to program shared memory multi-processor machines. Various studies have been done into the effectiveness of this approach.[64] One of these studies compared the size (in lines of code) and speed of programs written by a seasoned programmer not familiar with the language and corrections to these programs by a Go expert (from Google's development team), doing the same for Chapel, Cilk and Intel TBB. The study found that the non-expert tended to write divide-and-conquer algorithms with one go statement per recursion, while the expert wrote distribute-work-synchronize programs using one goroutine per processor. The expert's programs were usually faster, but also longer.[65]
+Lack of race condition safety
+
+There are no restrictions on how goroutines access shared data, making race conditions possible. Specifically, unless a program explicitly synchronizes via channels or other means, writes from one goroutine might be partly, entirely, or not at all visible to another, often with no guarantees about ordering of writes.[63] Furthermore, Go's internal data structures like interface values, slice headers, hash tables, and string headers are not immune to race conditions, so type and memory safety can be violated in multithreaded programs that modify shared instances of those types without synchronization.[66][67]
+
+Instead of language support, safe concurrent programming thus relies on conventions; for example, Chisnall recommends an idiom called "aliases xor mutable", meaning that passing a mutable value (or pointer) over a channel signals a transfer of ownership over the value to its receiver.[55]:155
+Omissions
+
+Go deliberately omits certain features common in other languages, including (implementation) inheritance, generic programming, assertions, pointer arithmetic, and implicit type conversions.[citation needed]
+
+Of these language features, the Go authors express an openness to generic programming, explicitly argue against assertions and pointer arithmetic, while defending the choice to omit type inheritance as giving a more useful language, encouraging instead the use of interfaces to achieve dynamic dispatch[b] and composition to reuse code. Composition and delegation are in fact largely automated by struct embedding; according to researchers Schmager et al., this feature "has many of the drawbacks of inheritance: it affects the public interface of objects, it is not fine-grained (i.e, no method-level control over embedding), methods of embedded objects cannot be hidden, and it is static", making it "not obvious" whether programmers will not overuse it to the extent that programmers in other languages are reputed to overuse inheritance.[39]
+
+Regarding generic programming, some built-in functions are in fact type-generic, but these are treated as special cases; Rob Pike calls this a weakness of the language that may at some point be changed.[32] The Google team that designs the language built at least one compiler for an experimental Go dialect with generics, but did not release it.[68]
+
+After initially omitting exceptions, the exception-like panic/recover mechanism was eventually added to the language, which the Go authors advise using for unrecoverable errors such as those that should halt an entire program or server request, or as a shortcut to propagate errors up the stack within a package (but not across package boundaries; there, error returns are the standard API).[69][70][71][72]
+Criticism
+
+Go critics assert that:
+
+    lack of compile-time generics leads to code duplication, metaprogramming cannot be statically checked[73][74] and the standard library cannot offer generic algorithms[75]
+    lack of language extensibility (through, for instance, operator overloading) makes certain tasks more verbose[73][76]
+    the type system's lack of Hindley-Milner typing inhibiting safety and/or expressiveness[77][78]
+    the pauses and overhead of garbage collection (GC) limit Go's use in systems programming compared to languages with manual memory management.[73][77]
+
+The language designers argue that these trade-offs are important to Go's success,[79] and explain some particular decisions at length,[80] though they do express openness to adding some form of generic programming in the future, and to pragmatic improvements in areas like standardizing ways to apply code generation.[81] Regarding GC, Go defenders point to pause-time reduction in later versions[82][83] (e.g. Go 1.6), while acknowledging their GC algorithm is not hard real-time.[citation needed]
+Conventions and code style
+
+The Go authors put substantial effort into molding the style and design of Go programs:
+
+    Indentation, spacing, and other surface-level details of code are automatically standardized by the gofmt tool. golint does additional style checks automatically.
+    Tools and libraries distributed with Go suggest standard approaches to things like API documentation (godoc[84]), testing (go test), building (go build), package management (go get), and so on.
+    Go enforces rules that are recommendations in other languages, for example banning cyclic dependencies, unused variables or imports, and implicit type conversions.
+    The omission of certain features (for example, functional-programming shortcuts like map and C++-style try/finally blocks) tends to encourage a particular explicit, concrete, and imperative programming style.
+    On day one the Go team published a collection of Go idioms, and later also collected code review comments, talks, official blog posts to teach Go style and coding philosophy.
+
+GOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGO
+GOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGO
+GOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGO
+GOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGO
+GOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGO
+GOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGO
+GOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGO
+GOGOGOGO
+The language was announced in November 2009. It is used in some of Google's production systems, as well as by other firms.[15]
+
+Two major implementations exist:
+
+    Google's Go compiler, "gc", is developed as open source software and targets various platforms including Linux, OS X, Windows, various BSD and Unix versions, and also, since 2015, mobile devices, including smartphones.[16]
+    A second compiler, gccgo, is a GCC frontend.[17][18]
+
+The "gc" toolchain has been self-hosting since version 1.5.[19]
+
+Go originated as an experiment by Google engineers Robert Griesemer, Rob Pike, and Ken Thompson to design a new programming language that would resolve common criticisms of other languages while maintaining their positive characteristics. The new language was to include the following features:[20]
+
+    be statically typed, scalable to large systems (as Java and C++)
+    be productive and readable, without too many mandatory keywords and repetition[21] ("light on the page" like dynamic languages)
+    not require integrated development environments, but support them well
+    support networking and multiprocessing
+
+In later interviews, all three of the language designers cited their shared dislike of C++'s complexity as a primary motivation for designing a new language.[22][23][24]
+
+Go 1.0 was released in March 2012.[25]
+Language design
+
+Go is recognizably in the tradition of C, but makes many changes to improve brevity, simplicity, and safety. Go consists of,
+
+    A syntax and environment adopting patterns more common in dynamic languages:[26]
+        Optional concise variable declaration and initialization through type inference (x := 0 not int x = 0; or var x = 0;).
+        Fast compilation times.[27]
+        Remote package management (go get)[28] and online package documentation.[29]
+    Distinctive approaches to particular problems:
+        Built-in concurrency primitives: light-weight processes (goroutines), channels, and the select statement.
+        An interface system in place of virtual inheritance, and type embedding instead of non-virtual inheritance.
+        A toolchain that, by default, produces statically linked native binaries without external dependencies.
+    A desire to keep the language specification simple enough to hold in a programmer's head,[30] in part by omitting features common to similar languages.
+
+Syntax
+
+Go's syntax includes changes from C aimed at keeping code concise and readable. A combined declaration/initialization operator was introduced that allows the programmer to write i := 3 or s := "Hello, world!", without specifying the types of variables. This contrasts with C's int i = 3; and const char *s = "Hello, world!";. Semicolons still terminate statements, but are implicit when the end of a line occurs. Functions may return multiple values, and returning a result, err pair is the conventional way a function indicates an error to its caller in Go.[a] Go adds literal syntaxes for initializing struct parameters by name, and for initializing maps and slices. As an alternative to C's three-statement for loop, Go's range expressions allow concise iteration over arrays, slices, strings, maps, and channels.[citation needed]
+Types
+
+Go has a number of built-in types, including numeric ones (byte, int64, float32, etc.), booleans, and character strings (string). Strings are immutable; built-in operators and keywords (rather than functions) provide concatenation, comparison, and UTF-8 encoding and decoding.[31] Record types can be defined with the struct keyword.[citation needed]
+
+For each type T and each non-negative integer constant n, there is an array type denoted [n]T; arrays of differing lengths are thus of different types. Dynamic arrays are available as "slices", denoted []T for some type T. These have a length and a capacity specifying when new memory needs to be allocated to expand the array. Several slices may share their underlying memory.[32][33][34]
+
+Pointers are available for all types, and the pointer-to-T type is denoted *T. Address-taking and indirection use the & and * operators as in C, or happen implicitly through the method call or attribute access syntax.[35] There is no pointer arithmetic, except via the special unsafe.Pointer type in the standard library.[citation needed]
+
+For a pair of types K, V, the type map[K]V is the type of hash tables mapping type-K keys to type-V values. Hash tables are built into the language, with special syntax and built-in functions. chan T is a channel that allows sending values of type T between concurrent Go processes.[citation needed]
+
+Aside from its support for interfaces, Go's type system is nominal: the type keyword can be used to define a new named type, which is distinct from other named types that have the same layout (in the case of a struct, the same members in the same order). Some conversions between types (e.g., between the various integer types) are pre-defined and adding a new type may define additional conversions, but conversions between named types must always be invoked explicitly.[36] For example, the type keyword can be used to define a type for IPv4 addresses, which are 32-bit unsigned integers.[citation needed]
+
+type ipv4addr uint32
+
+With this type definition, ipv4addr(x) interprets the uint32 value x as an IP address. Simply assigning x to a variable of type ipv4addr is a type error.[citation needed]
+
+Constant expressions may be either typed or "untyped"; they are given a type when assigned to a typed variable if the value they represent passes a compile-time check.[37]
+
+Function types are indicated by the func keyword; they take zero or more parameters and return zero or more values, all of which are typed. The parameter and return values determine a function type; thus, func(string, int32) (int, error) is the type of functions that take a string and a 32-bit signed integer, and return a signed integer (of default width) and a value of the built-in interface type error.[citation needed]
+
+Any named type has a method set associated with it. The IP address example above can be extended with a method for checking if its value is a known standard.
+
+// ZeroBroadcast reports whether addr is 255.255.255.255.
+func (addr ipv4addr) ZeroBroadcast() bool {
+    return addr == 0xFFFFFFFF
+}
+
+Due to nominal typing, this method definition adds a method to ipv4addr, but not on uint32. While methods have special definition and call syntax, there is no distinct method type.[38]
+Interface system
+
+Go provides two features that replace class inheritance.[citation needed]
+
+The first is embedding, which can be viewed as an automated form of composition[39] or delegation.[40]:255
+
+The second are its interfaces, which provides runtime polymorphism.[41]:266 Interfaces provide a limited form of structural typing in the otherwise nominal type system of Go. Any type that implements all methods of an interface conforms to that interface. Go interfaces were designed after protocols from the Smalltalk programming language.[42] Multiple sources use the term duck typing when describing Go interface.[43][44] Although the term duck typing is not precisely defined and therefore not wrong, it usually implies that type conformance is not statically checked. Since conformance to a Go interface is checked statically by the Go compiler (except when performing a type assertion), the Go authors prefer to use the term structural typing.[citation needed]
+
+An interface specifies a set of types by listing required methods and their types and is satisfied by any type that has the required methods. Implementing types do not need to specify their implementing of interfaces, so if Shape, Square and Circle are defined as:
+
+import "math"
+
+type Shape interface {
+    Area() float64
+}
+
+type Square struct { // Note: no "implements" declaration
+    side float64
+}
+
+func (sq Square) Area() float64 { return sq.side * sq.side }
+
+type Circle struct { // No "implements" declaration here either
+    radius float64
+}
+
+func (c Circle) Area() float64 { return math.Pi * math.Pow(c.radius, 2) }
+
+Both Square and Circle are implicitly a Shape and can be assigned to a Shape-typed variable.[41]:263–268 In formal language, Go's interface system provides structural rather than nominal typing. Interfaces can embed other interfaces with the effect of creating a combined interface that is satisfied by exactly the types that implement the embedded interface and any methods that the newly defined interface adds.[41]:270
+
+The Go standard library uses interfaces to provide genericity in several places, including the input/output system that is based on the concepts of Reader and Writer.[41]:282–283
+
+Besides calling methods via interfaces, Go allows converting interface values to other types with a run-time type check. The language constructs to do so are the type assertion,[45] which checks against a single potential type, and the type switch,[46] which checks against multiple types.[citation needed]
+
+The empty interface interface{} is an important corner case because it can refer to an item of any concrete type. It is similar to the Object class in Java or C#, but with the difference that the empty interface is satisfied by any type, including built-in types like int (while in Java and C#, an Object variable can only hold instances of reference type).[41]:284 Code using the empty interface cannot simply call methods (or built-in operators) on the referred-to object, but it can store the interface{} value, try to convert it to a more useful type via a type assertion or type switch, or inspect it with Go's reflect package.[47] Because interface{} can refer to any value, it is a limited way to escape the restrictions of static typing, like void* in C but with additional run-time type checks.[citation needed]
+
+Interface values are implemented using pointer to data and a second pointer to run-time type information.[48] Like some other types implemented using pointers in Go, interface values are nil if uninitialized.[49]
+Package system
+
+In Go's package system, each package has a path (e.g., "compress/bzip2" or "golang.org/x/net/html") and a name (e.g., bzip2 or html). References to other packages' definitions must always be prefixed with the other package's name, and only the capitalized names from other packages are accessible: io.Reader is public but bzip2.reader is not.[50] The go get command can retrieve packages stored in a remote repository such as GitHub.,[51] and developers are encouraged to develop packages inside a base path corresponding to a source repository (such as github.com/user_name/package_name) to reduce the likelihood of name collision with future additions to the standard library or other external libraries.[52]
+
+Proposals exist to introduce a proper package management solution for Go similar to Rust's cargo system or Node's npm system.[53]
+Concurrency: goroutines and channels
+
+The Go language has built-in facilities, as well as library support, for writing concurrent programs. Concurrency refers not only to CPU parallelism, but also to asynchrony: letting slow operations like a database or network-read run while the program does other work, as is common in event-based servers.[54]
+
+The primary concurrency construct is the goroutine, a type of light-weight process. A function call prefixed with the go keyword starts a function in a new goroutine. The language specification does not specify how goroutines should be implemented, but current implementations multiplex a Go process's goroutines onto a smaller set of operating system threads, similar to the scheduling performed in Erlang.[55]:10
+
+While a standard library package featuring most of the classical concurrency control structures (mutex locks, etc.) is available,[55]:151–152 idiomatic concurrent programs instead prefer channels, which provide send messages between goroutines.[56] Optional buffers store messages in FIFO order[40]:43 and allow sending goroutines to proceed before their messages are received.[citation needed]
+
+Channels are typed, so that a channel of type chan T can only be used to transfer messages of type T. Special syntax is used to operate on them; <-ch is an expression that causes the executing goroutine to block until a value comes in over the channel ch, while ch <- x sends the value x (possibly blocking until another goroutine receives the value). The built-in switch-like select statement can be used to implement non-blocking communication on multiple channels; see below for an example. Go has a memory model describing how goroutines must use channels or other operations to safely share data.[57]
+
+The existence of channels sets Go apart from actor model-style concurrent languages like Erlang, where messages are addressed directly to actors (corresponding to goroutines). The actor style can be simulated in Go by maintaining a one-to-one correspondence between goroutines and channels, but the language allows multiple goroutines to share a channel or a single goroutine to send and receive on multiple channels.[55]:147
+
+From these tools one can build concurrent constructs like worker pools, pipelines (in which, say, a file is decompressed and parsed as it downloads), background calls with timeout, "fan-out" parallel calls to a set of services, and others.[58] Channels have also found uses further from the usual notion of interprocess communication, like serving as a concurrency-safe list of recycled buffers,[59] implementing coroutines (which helped inspire the name goroutine),[60] and implementing iterators.[61]
+
+Concurrency-related structural conventions of Go (channels and alternative channel inputs) are derived from Tony Hoare's communicating sequential processes model. Unlike previous concurrent programming languages such as Occam or Limbo (a language on which Go co-designer Rob Pike worked),[62] Go does not provide any built-in notion of safe or verifiable concurrency.[63] While the communicating-processes model is favored in Go, it is not the only one: all goroutines in a program share a single address space. This means that mutable objects and pointers can be shared between goroutines; see § Lack of race condition safety, below.[citation needed]
+Suitability for parallel programming
+
+Although Go's concurrency features are not aimed primarily at parallel processing,[54] they can be used to program shared memory multi-processor machines. Various studies have been done into the effectiveness of this approach.[64] One of these studies compared the size (in lines of code) and speed of programs written by a seasoned programmer not familiar with the language and corrections to these programs by a Go expert (from Google's development team), doing the same for Chapel, Cilk and Intel TBB. The study found that the non-expert tended to write divide-and-conquer algorithms with one go statement per recursion, while the expert wrote distribute-work-synchronize programs using one goroutine per processor. The expert's programs were usually faster, but also longer.[65]
+Lack of race condition safety
+
+There are no restrictions on how goroutines access shared data, making race conditions possible. Specifically, unless a program explicitly synchronizes via channels or other means, writes from one goroutine might be partly, entirely, or not at all visible to another, often with no guarantees about ordering of writes.[63] Furthermore, Go's internal data structures like interface values, slice headers, hash tables, and string headers are not immune to race conditions, so type and memory safety can be violated in multithreaded programs that modify shared instances of those types without synchronization.[66][67]
+
+Instead of language support, safe concurrent programming thus relies on conventions; for example, Chisnall recommends an idiom called "aliases xor mutable", meaning that passing a mutable value (or pointer) over a channel signals a transfer of ownership over the value to its receiver.[55]:155
+Omissions
+
+Go deliberately omits certain features common in other languages, including (implementation) inheritance, generic programming, assertions, pointer arithmetic, and implicit type conversions.[citation needed]
+
+Of these language features, the Go authors express an openness to generic programming, explicitly argue against assertions and pointer arithmetic, while defending the choice to omit type inheritance as giving a more useful language, encouraging instead the use of interfaces to achieve dynamic dispatch[b] and composition to reuse code. Composition and delegation are in fact largely automated by struct embedding; according to researchers Schmager et al., this feature "has many of the drawbacks of inheritance: it affects the public interface of objects, it is not fine-grained (i.e, no method-level control over embedding), methods of embedded objects cannot be hidden, and it is static", making it "not obvious" whether programmers will not overuse it to the extent that programmers in other languages are reputed to overuse inheritance.[39]
+
+Regarding generic programming, some built-in functions are in fact type-generic, but these are treated as special cases; Rob Pike calls this a weakness of the language that may at some point be changed.[32] The Google team that designs the language built at least one compiler for an experimental Go dialect with generics, but did not release it.[68]
+
+After initially omitting exceptions, the exception-like panic/recover mechanism was eventually added to the language, which the Go authors advise using for unrecoverable errors such as those that should halt an entire program or server request, or as a shortcut to propagate errors up the stack within a package (but not across package boundaries; there, error returns are the standard API).[69][70][71][72]
+Criticism
+
+Go critics assert that:
+
+    lack of compile-time generics leads to code duplication, metaprogramming cannot be statically checked[73][74] and the standard library cannot offer generic algorithms[75]
+    lack of language extensibility (through, for instance, operator overloading) makes certain tasks more verbose[73][76]
+    the type system's lack of Hindley-Milner typing inhibiting safety and/or expressiveness[77][78]
+    the pauses and overhead of garbage collection (GC) limit Go's use in systems programming compared to languages with manual memory management.[73][77]
+
+The language designers argue that these trade-offs are important to Go's success,[79] and explain some particular decisions at length,[80] though they do express openness to adding some form of generic programming in the future, and to pragmatic improvements in areas like standardizing ways to apply code generation.[81] Regarding GC, Go defenders point to pause-time reduction in later versions[82][83] (e.g. Go 1.6), while acknowledging their GC algorithm is not hard real-time.[citation needed]
+Conventions and code style
+
+The Go authors put substantial effort into molding the style and design of Go programs:
+
+    Indentation, spacing, and other surface-level details of code are automatically standardized by the gofmt tool. golint does additional style checks automatically.
+    Tools and libraries distributed with Go suggest standard approaches to things like API documentation (godoc[84]), testing (go test), building (go build), package management (go get), and so on.
+    Go enforces rules that are recommendations in other languages, for example banning cyclic dependencies, unused variables or imports, and implicit type conversions.
+    The omission of certain features (for example, functional-programming shortcuts like map and C++-style try/finally blocks) tends to encourage a particular explicit, concrete, and imperative programming style.
+    On day one the Go team published a collection of Go idioms, and later also collected code review comments, talks, official blog posts to teach Go style and coding philosophy.
+
+GOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGO
+GOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGO
+GOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGO
+GOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGO
+GOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGO
+GOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGO
+GOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGOGO
+GOGOGOG
+
+
+
