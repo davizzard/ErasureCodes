@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"io"
 	"strconv"
-	"github.com/alruiz12/goObjStore/src/httpVar"
+	"davizzard/ErasureCodes/src/goObjStore/src/httpVar"
 	"math"
-	"github.com/alruiz12/goObjStore/src/conf"
+	"davizzard/ErasureCodes/src/goObjStore/src/conf"
 )
 
 

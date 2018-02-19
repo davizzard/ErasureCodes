@@ -16,6 +16,6 @@ func TestEncode(t *testing.T) {
 
 func TestDecode(t *testing.T) {
 	fmt.Println("Begin TEST DECODE --------------------------------")
-	//API.DecodeFileAPI("/root/Desktop/empty/go/src/darroyo/ErasureCodes/src/test/test.txt", 40, 40, 3, ".")
+	//API.DecodeFileAPI("/root/Desktop/empty/go/src/davizzard/ErasureCodes/src/test/test.txt", 40, 40, 3, ".")
 	fmt.Println("End TEST DECODE --------------------------------")
 }
