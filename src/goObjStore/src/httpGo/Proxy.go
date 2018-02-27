@@ -14,12 +14,12 @@ import (
 	"encoding/json"
 	"crypto/md5"
 	"encoding/hex"
-	"davizzard/ErasureCodes/src/goObjStore/src/httpVar"
+	"github.com/davizzard/ErasureCodes/src/goObjStore/src/httpVar"
 	"strings"
 	"sync"
 	"math/rand"
-	"davizzard/ErasureCodes/src/goObjStore/src/conf"
-	"davizzard/ErasureCodes/src/API"
+	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
+	"github.com/davizzard/ErasureCodes/src/API"
 )
 
 //const fileChunk = 1*(1<<10) // 1 KB
@@ -419,8 +419,8 @@ func GetObjProxy(fullName string, proxyAddr []string, trackerAddr string, getOK 
 	}
 
 	// Create folder for receiving
-	os.Mkdir(os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src/local",+0777)
-	os.Mkdir(os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src/local/"+ fullName,0777)
+	os.Mkdir(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/local",+0777)
+	os.Mkdir(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/local/"+ fullName,0777)
 
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	getID:=r.Int()
@@ -536,7 +536,7 @@ func CheckPiecesObj(key string ,fileName string, filePath string, numNodes int, 
 	totalPartsNumOriginal := int(math.Ceil(float64(size) / float64(fileChunk)))
 
 	// Walking through subfiles directory
-	path:=os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src/data/"+key+"/"
+	path:=os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/"+key+"/"
 	subDir, err := ioutil.ReadDir(path)
 	if err != nil {
 		fmt.Println(err)
@@ -547,8 +547,8 @@ func CheckPiecesObj(key string ,fileName string, filePath string, numNodes int, 
 	for currentDir<numNodes{
 
 		// Create new file to fill out
-		_, err = os.Create(os.Getenv("GOPATH") + "/src/davizzard/ErasureCodes/src/goObjStore/src" + fileName+strconv.Itoa(currentDir))
-		newFile, err := os.OpenFile(os.Getenv("GOPATH") + "/src/davizzard/ErasureCodes/src/goObjStore/src" + fileName+strconv.Itoa(currentDir), os.O_APPEND | os.O_WRONLY, 0666)
+		_, err = os.Create(os.Getenv("GOPATH") + "/src/github.com/davizzard/ErasureCodes/src/goObjStore/src" + fileName+strconv.Itoa(currentDir))
+		newFile, err := os.OpenFile(os.Getenv("GOPATH") + "/src/github.com/davizzard/ErasureCodes/src/goObjStore/src" + fileName+strconv.Itoa(currentDir), os.O_APPEND | os.O_WRONLY, 0666)
 		if err != nil {
 			fmt.Println(err)
 			return false
@@ -595,7 +595,7 @@ func CheckPiecesObj(key string ,fileName string, filePath string, numNodes int, 
 		}
 
 		// Compute and compare new hash
-		newHash := md5sum(os.Getenv("GOPATH") + "/src/davizzard/ErasureCodes/src/goObjStore/src" + fileName+strconv.Itoa(currentDir))
+		newHash := md5sum(os.Getenv("GOPATH") + "/src/github.com/davizzard/ErasureCodes/src/goObjStore/src" + fileName+strconv.Itoa(currentDir))
 		if strings.Compare(key, newHash) != 0 {
 			return false
 		}
@@ -605,7 +605,7 @@ func CheckPiecesObj(key string ,fileName string, filePath string, numNodes int, 
 	if currentDir==0{return false}	// Never got in loop
 
 	// Checking Get output (locally)
-	path=os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src/local/"+key+"/"
+	path=os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/local/"+key+"/"
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		fmt.Println(err)
@@ -613,8 +613,8 @@ func CheckPiecesObj(key string ,fileName string, filePath string, numNodes int, 
 	}
 
 	// Create new file
-	_, err = os.Create(os.Getenv("GOPATH") + "/src/davizzard/ErasureCodes/src/goObjStore/src" + fileName)
-	newFile, err := os.OpenFile(os.Getenv("GOPATH") + "/src/davizzard/ErasureCodes/src/goObjStore/src" + fileName, os.O_APPEND | os.O_WRONLY, 0666)
+	_, err = os.Create(os.Getenv("GOPATH") + "/src/github.com/davizzard/ErasureCodes/src/goObjStore/src" + fileName)
+	newFile, err := os.OpenFile(os.Getenv("GOPATH") + "/src/github.com/davizzard/ErasureCodes/src/goObjStore/src" + fileName, os.O_APPEND | os.O_WRONLY, 0666)
 	if err != nil {
 		fmt.Println(err)
 		return false
@@ -660,7 +660,7 @@ func CheckPiecesObj(key string ,fileName string, filePath string, numNodes int, 
 	}
 
 	// Compute and compare new hash
-	newHash := md5sum(os.Getenv("GOPATH") + "/src/davizzard/ErasureCodes/src/goObjStore/src" + fileName)
+	newHash := md5sum(os.Getenv("GOPATH") + "/src/github.com/davizzard/ErasureCodes/src/goObjStore/src" + fileName)
 	if strings.Compare(hash, newHash) != 0 {
 		return false
 	}
@@ -980,7 +980,7 @@ func GetContProxy(accountName string, containerName string) Container{
 
 func CheckFileReplication(fileType string, name string, replication int) bool{
 	if replication<2 {return false}
-	var path = (os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src/")
+	var path = (os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/")
 	 hashList := make([]string, replication)
 	var currentReplica int = 0
 	var i int =0
@@ -1085,7 +1085,7 @@ func GatherPieces(key string , totalParts int, parityShards int) bool{
 	*/
 
 	// Checking Get output (locally)
-	path=os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src/local/"+key+"/"
+	path=os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/local/"+key+"/"
 
 	API.DecodeFileAPI(path, key, totalParts-parityShards, parityShards, conf.ChunkProxyName, nil)
 

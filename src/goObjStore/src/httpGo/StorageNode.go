@@ -7,16 +7,15 @@ import(
 	"log"
 	"os"
 	"encoding/json"
-	"davizzard/ErasureCodes/src/goObjStore/src/httpVar"
+	"github.com/davizzard/ErasureCodes/src/goObjStore/src/httpVar"
 	"strconv"
 	"path/filepath"
 	"strings"
 	"sync"
 	"math/rand"
-
-	"davizzard/ErasureCodes/src/goObjStore/src/conf"
+	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
 )
-var path = (os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore")
+var path = (os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore")
 
 func prepSN(w http.ResponseWriter, r *http.Request){
 	var hashRecived putObjMSg
@@ -39,27 +38,27 @@ func prepSN(w http.ResponseWriter, r *http.Request){
 
 	httpVar.DirMutex.Lock()
 	// if data directory doesn't exist, create it
-	_, err = os.Stat(os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src/data")
+	_, err = os.Stat(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data")
 	if err != nil {
-		os.Mkdir(os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src/data",0777)
+		os.Mkdir(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data",0777)
 	}
 
 	// if data/chunk.Hash directory doesn't exist, create it
-	_, err = os.Stat(os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src/data/"+hashRecived.ID)
+	_, err = os.Stat(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/"+hashRecived.ID)
 	if err != nil {
-		os.Mkdir(os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src/data/"+hashRecived.ID,0777)
+		os.Mkdir(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/"+hashRecived.ID,0777)
 	}
 
 	// if data/chunk.Hash/nodeID directory doesn't exist, create it
-	_, err = os.Stat(os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src/data/"+hashRecived.ID +"/"+strconv.Itoa( nodeID))
+	_, err = os.Stat(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/"+hashRecived.ID +"/"+strconv.Itoa( nodeID))
 	if err != nil {
-		err2:=os.Mkdir(os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src/data/"+hashRecived.ID +"/"+strconv.Itoa( nodeID),0777)
+		err2:=os.Mkdir(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/"+hashRecived.ID +"/"+strconv.Itoa( nodeID),0777)
 		if err2!=nil{
 			fmt.Println("StorageNode error making dir", err.Error())
 		}
 	} else{
-		os.RemoveAll(os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src/data/"+hashRecived.ID +"/"+strconv.Itoa( nodeID))
-		err2:=os.Mkdir(os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src/data/"+hashRecived.ID +"/"+strconv.Itoa( nodeID),0777)
+		os.RemoveAll(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/"+hashRecived.ID +"/"+strconv.Itoa( nodeID))
+		err2:=os.Mkdir(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/"+hashRecived.ID +"/"+strconv.Itoa( nodeID),0777)
 		if err2!=nil{
 			fmt.Println("StorageNode error making dir", err.Error())
 		}
@@ -432,7 +431,7 @@ func SNGetAcc(w http.ResponseWriter, r *http.Request){
 
 
 
-	var accPath string = (os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore")
+	var accPath string = (os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore")
 
 	// read account from file
 	httpVar.AccFileMutex.Lock()

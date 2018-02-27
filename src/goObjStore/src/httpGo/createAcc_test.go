@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"davizzard/ErasureCodes/src/goObjStore/src/conf"
+	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
 )
 func TestCreateAccountAPI(t *testing.T) {
 	router :=MyNewRouter()

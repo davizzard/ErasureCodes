@@ -9,7 +9,7 @@ var ChunkProxyName = "NEW"
 var PortsPerNode int = 3
 //const differentIPs = 2
 const IP = "192.168.1.10"
-var FilePath = os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src/bigFile"
+var FilePath = os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/bigFile"
 //var FilePath = os.Getenv("GOPATH")+"/src/github.com/alruiz12/goObjStore/dataset.xml"
 // TRACKER
 var TrackerAddr = IP+":8000"
@@ -20,8 +20,8 @@ var Proxy3 = IP+":8072"
 
 
 var ProxyAddr=[]string{Proxy1,Proxy2,Proxy3/*,Proxy4,Proxy5*/}
-var DownloadsDirectory=os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src/Downloads/"
-var LocalDirectory=os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src/local/"
+var DownloadsDirectory=os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/Downloads/"
+var LocalDirectory=os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/local/"
 // ---------------------------------------------------------------------------------------
 
 

@@ -1,7 +1,7 @@
 package httpGo
 import(
 	"fmt"
-	"davizzard/ErasureCodes/src/goObjStore/src/httpVar"
+	"github.com/davizzard/ErasureCodes/src/goObjStore/src/httpVar"
 	"net/http"
 	"encoding/json"
 	"io/ioutil"

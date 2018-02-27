@@ -6,7 +6,7 @@ import(
 	"io"
 	"crypto/md5"
 	"encoding/hex"
-	"davizzard/ErasureCodes/src/goObjStore/src/conf"
+	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
 	"time"
 	"sync"
 	"strings"
@@ -24,7 +24,7 @@ func PutObjAPI(w http.ResponseWriter, r *http.Request){
 		addedResults:=results[1]+results[2]+results[3]
 
 		// Creating temporary file to save received file (in the request body)
-		file, err := os.Create(os.Getenv("GOPATH") + "/src/davizzard/ErasureCodes/src/goObjStore/src/" + addedResults )
+		file, err := os.Create(os.Getenv("GOPATH") + "/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/" + addedResults )
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -36,7 +36,7 @@ func PutObjAPI(w http.ResponseWriter, r *http.Request){
 
 		// Creating a channel to control call
 		putOK := make(chan bool)
-		go PutObjProxy(os.Getenv("GOPATH") + "/src/davizzard/ErasureCodes/src/goObjStore/src/" + addedResults, conf.TrackerAddr, conf.NumNodes, putOK ,results[1], results[2], results[3], addedResults)
+		go PutObjProxy(os.Getenv("GOPATH") + "/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/" + addedResults, conf.TrackerAddr, conf.NumNodes, putOK ,results[1], results[2], results[3], addedResults)
 		success := <-putOK
 		if success == true {
 			fmt.Println("put success ", time.Since(startPUT))
@@ -47,7 +47,7 @@ func PutObjAPI(w http.ResponseWriter, r *http.Request){
 		}
 
 		// Removing temporary file
-		os.Remove(os.Getenv("GOPATH") + "/src/davizzard/ErasureCodes/src/goObjStore/src/" + addedResults )
+		os.Remove(os.Getenv("GOPATH") + "/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/" + addedResults )
 		if err != nil {
 			fmt.Println(err)
 		}

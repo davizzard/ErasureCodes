@@ -2,8 +2,8 @@ package main
 
 import (
 	"time"
-	"davizzard/ErasureCodes/src/goObjStore/src/httpGo"
-	"davizzard/ErasureCodes/src/goObjStore/src/conf"
+	"github.com/davizzard/ErasureCodes/src/goObjStore/src/httpGo"
+	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
 	"net/http"
 )
 func main() {

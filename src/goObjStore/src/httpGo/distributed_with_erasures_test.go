@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"davizzard/ErasureCodes/src/goObjStore/src/conf"
+	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
 )
 
 var router = MyNewRouter()
@@ -38,7 +38,7 @@ var proxy2 = IP+":8071"
 var proxy3 = IP+":8072"
 
 func TestDistributedWithErasures(t *testing.T) {
-	var path = os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src"
+	var path = os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src"
 
 	peer1arun:=&http.Server{Addr:Peer1a, Handler:router}
 	peer1brun:=&http.Server{Addr:Peer1b, Handler:router}

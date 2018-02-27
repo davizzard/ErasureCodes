@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"davizzard/ErasureCodes/src/goObjStore/src/conf"
+	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
 )
 func TestDistributed(t *testing.T) {
 	router :=MyNewRouter()
@@ -15,7 +15,7 @@ func TestDistributed(t *testing.T) {
 	//---------------------------------------------------------------------
 
 	const IP = ""
-	var path = os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src"
+	var path = os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src"
 
 	//var filePath = os.Getenv("GOPATH")+"/src/github.com/alruiz12/goObjStore/dataset.xml"
 

@@ -9,8 +9,8 @@ import (
 	"strconv"
 	"math"
 	"time"
-	"davizzard/ErasureCodes/src/goObjStore/src/httpVar"
-	"davizzard/ErasureCodes/src/goObjStore/src/conf"
+	"github.com/davizzard/ErasureCodes/src/goObjStore/src/httpVar"
+	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
 )
 
 
