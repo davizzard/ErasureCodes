@@ -1,0 +1,3 @@
+
+mode: atomic
+github.com/davizzard/ErasureCodes/src/goObjStore/src/Main.go:9.13,12.2 2 0
