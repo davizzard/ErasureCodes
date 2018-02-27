@@ -6,9 +6,10 @@ install:
   - go get github.com/gorilla/mux
   - go get github.com/gorilla/context
   - go get github.com/tinylib/msgp/msgp
+  - go get github.com/klauspost/reedsolomon
 
-#script:
- # - src/test.sh
+script:
+  - src/test.sh
 
-#after_success:
-  #- bash <(curl -s https://codecov.io/bash)
+after_success:
+  - bash <(curl -s https://codecov.io/bash) -t 7f41f947-d180-4c3f-8ce0-17a9f01205d3
