@@ -10,10 +10,12 @@ import (
 	"davizzard/ErasureCodes/src/goObjStore/src/httpVar"
 	"math"
 	"davizzard/ErasureCodes/src/goObjStore/src/conf"
+	"time"
 )
 
 
 func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan bool) (int, string, int) {
+	defer elapsed("EncodeFileAPI")()
 	var dataShards int
 	var counter int = 0
 
@@ -126,10 +128,11 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 
 
 func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, separator string, putOK chan bool) {
+	defer elapsed("DecodeFileAPI")()
 	fmt.Print("Decoding file... Data Shards: ")
 	fmt.Print(dataShards)
 	fmt.Print(". Parity shards: ")
-	fmt.Print(parityShards)
+	fmt.Println(parityShards)
 	// Create matrix
 	enc, err := reedsolomon.NewStream(dataShards, parityShards)
 	CheckErr(err)
@@ -228,5 +231,13 @@ func CheckErr(err error) {
 	if err != nil {
 		fmt.Println("Error: %s", err.Error())
 		os.Exit(2)
+	}
+}
+
+
+func elapsed(what string) func() {
+	start := time.Now()
+	return func() {
+		fmt.Printf("%s took %v\n", what, time.Since(start))
 	}
 }
