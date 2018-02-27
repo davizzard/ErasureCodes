@@ -12,7 +12,7 @@ import (
 func TestCreateAccountAPI(t *testing.T) {
 	router :=MyNewRouter()
 	const IP = "127.0.0.1"
-	var path = os.Getenv("GOPATH")+"/src/davizzard/ErasureCodes/src/goObjStore/src"
+	var path = os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src"
 
 	//var filePath = os.Getenv("GOPATH")+"/src/github.com/alruiz12/goObjStore/dataset.xml"
 
