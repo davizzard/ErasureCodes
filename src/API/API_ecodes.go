@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"io"
 	"strconv"
-	"davizzard/ErasureCodes/src/goObjStore/src/httpVar"
 	"math"
-	"davizzard/ErasureCodes/src/goObjStore/src/conf"
 	"time"
+	"davizzard/ErasureCodes/src/goObjStore/src/httpVar"
+	"davizzard/ErasureCodes/src/goObjStore/src/conf"
 )
 
 
