@@ -77,6 +77,8 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 	shards := dataShards + parityShards
 	out := make([]*os.File, shards)
 
+	fmt.Println("Shards: %d", shards)
+
 	// Create the resulting files.
 	_, file := filepath.Split(fname)
 	dir := conf.LocalDirectory
@@ -88,6 +90,7 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 		out[i], err = os.Create(filepath.Join(dir, outfn))
 		fmt.Println("%s + %s", dir, outfn)
 		CheckErr(err)
+		fmt.Println("Hey!")
 	}
 
 	// Split into files.
@@ -104,6 +107,7 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 
 	for i := range data {
 		out[i].Close()
+		fmt.Println("Hello?")
 		f, err := os.Open(out[i].Name())
 		CheckErr(err)
 		input[i] = f

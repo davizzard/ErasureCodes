@@ -249,6 +249,7 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 	var wg sync.WaitGroup
 	wg.Add(totalPartsNum)
 	for currentPart < totalPartsNum {
+		fmt.Println("Parts loop is starting...")
 		//partSize = int(math.Min(fileChunk, float64(size - (currentPart * fileChunk))))
 		//partBuffer = make([]byte, partSize)
 		//_, err = file.Read(partBuffer)                // Get chunk
