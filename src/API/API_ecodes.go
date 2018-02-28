@@ -11,8 +11,6 @@ import (
 	"time"
 	"github.com/davizzard/ErasureCodes/src/goObjStore/src/httpVar"
 	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
-	"log"
-	"io/ioutil"
 )
 
 
@@ -90,18 +88,6 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 		//outfn := fmt.Sprintf("NEW%d", i)
 		fmt.Println("Creating", outfn)
 		out[i], err = os.Create(filepath.Join(dir, outfn))
-
-		files, err := ioutil.ReadDir("src/github.com/davizzard/ErasureCodes/src/goObjStore/src/local")
-		if err != nil {
-			log.Fatal(err)
-			fmt.Println("Nice!")
-		}
-
-		for _, f := range files {
-			fmt.Println(f.Name())
-			fmt.Println("Hello!")
-		}
-
 		CheckErr(err)
 	}
 
