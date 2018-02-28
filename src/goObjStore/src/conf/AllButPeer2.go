@@ -49,7 +49,7 @@ var Peers =[][]string{Peer1List, Peer2List, Peer3List/*, Peer4List, Peer5List*/}
 
 
 // OTHER MACHINES ------------------------------------------------------------------------
-const otherIP="192.168.1.11"
+const otherIP="10.0.2.15"
 
 var Peer2a = otherIP+":8012"
 var Peer2b = otherIP+":8022"
