@@ -89,7 +89,7 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 		fmt.Println("Creating", outfn)
 		out[i], err = os.Create(filepath.Join(dir, outfn))
 		fmt.Println("%s + %s", dir, outfn)
-		CheckErr(err)
+		//CheckErr(err)
 		fmt.Println("Hey!")
 	}
 
