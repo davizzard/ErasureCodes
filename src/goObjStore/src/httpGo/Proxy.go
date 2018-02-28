@@ -22,8 +22,8 @@ import (
 	"github.com/davizzard/ErasureCodes/src/API"
 )
 
-//const fileChunk = 1*(1<<10) // 1 KB
-const fileChunk = 4*(1<<20) // 4 MB
+const fileChunk = 1*(1<<10) // 1 KB
+//const fileChunk = 4*(1<<20) // 4 MB
 
 type msg struct {
 	NodeList [][]string
