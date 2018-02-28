@@ -8,7 +8,7 @@ var LocalFileName = "NEW.xml"
 var ChunkProxyName = "NEW"
 var PortsPerNode int = 3
 //const differentIPs = 2
-const IP = "127.0.0.1"
+const IP = "192.168.1.10"
 var FilePath = os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/bigFile"
 //var FilePath = os.Getenv("GOPATH")+"/src/github.com/alruiz12/goObjStore/dataset.xml"
 // TRACKER
@@ -49,7 +49,7 @@ var Peers =[][]string{Peer1List, Peer2List, Peer3List/*, Peer4List, Peer5List*/}
 
 
 // OTHER MACHINES ------------------------------------------------------------------------
-const otherIP="10.0.2.15"
+const otherIP="192.168.1.11"
 
 var Peer2a = otherIP+":8012"
 var Peer2b = otherIP+":8022"
