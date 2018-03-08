@@ -44,7 +44,7 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 		counter++
 	}
 	*/
-	fmt.Print("Filechunk size BEFORE is: ")
+	fmt.Print("Filechunk size (bytes) BEFORE is: ")
 	fmt.Println(fileChunk)
 
 	httpVar.TotalNumMutex.Lock()
@@ -60,7 +60,7 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 
 	fileChunk = int(math.Ceil(float64(size) / float64(dataShards+parityShards)))
 
-	fmt.Print("Filechunk size AFTER is: ")
+	fmt.Print("Filechunk size (bytes) AFTER is: ")
 	fmt.Println(fileChunk)
 
 	// Checking arguments.
@@ -77,14 +77,17 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 	shards := dataShards + parityShards
 	out := make([]*os.File, shards)
 
-	fmt.Println("Shards: %d", shards)
+	fmt.Println("Shards: ", shards)
 
 	// Create the resulting files.
 	_, file := filepath.Split(fname)
-	dir := conf.LocalDirectory
+
+	dir := conf.LocalDirectory + "/" + file
+	os.Mkdir(dir, 0777)
+	dir = dir + "/"
 
 	for i := range out {
-		outfn := fmt.Sprintf("%s.%d", file, i)
+		outfn := fmt.Sprintf("%d", i)
 		//outfn := fmt.Sprintf("NEW%d", i)
 		fmt.Println("Creating", outfn)
 		out[i], err = os.Create(filepath.Join(dir, outfn))
@@ -123,18 +126,19 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 	CheckErr(err)
 	fmt.Printf("File split into %d data + %d parity shards.\n", dataShards, parityShards)
 
-	return shards, fInfo.Name(), size
+	return shards, file, size
 
 }
 
 
 
-func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, separator string, putOK chan bool) {
+func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, separator string, objName string, nodeList [][]string) (bool) {
 	defer elapsed("DecodeFileAPI")()
-	fmt.Print("Decoding file... Data Shards: ")
-	fmt.Print(dataShards)
-	fmt.Print(". Parity shards: ")
-	fmt.Println(parityShards)
+	var missingShardsCount = 0
+	var missingShards = make([]int, dataShards+parityShards)
+	var exitStatus = false
+
+	fmt.Printf("Decoding file... Data Shards: %d. Parity shards: %d\n", dataShards, parityShards)
 	// Create matrix
 	enc, err := reedsolomon.NewStream(dataShards, parityShards)
 	CheckErr(err)
@@ -161,13 +165,45 @@ func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, s
 				fmt.Println("Creating", outfn)
 				out[i], err = os.Create(outfn)
 				CheckErr(err)
+				missingShards[missingShardsCount] = i
+				missingShardsCount++
 			}
 		}
 		err = enc.Reconstruct(shards, out)
 		if err != nil {
 			fmt.Println("Reconstruct failed -", err)
-			os.Exit(1)
+			exitStatus = true
+			return exitStatus
 		}
+/*
+		// Preparing Nodes to send reconstructed shards
+		if httpGo.PrepareNodes(nodeList, objName, 0, 0, "") {
+			exitStatus = true
+		}
+
+		//Sending reconstructed shards to Nodes
+		var wg sync.WaitGroup
+		wg.Add(missingShardsCount)
+
+		for j := range missingShards {
+			nodeNum := j % len(nodeList)
+			fileShardPath := conf.LocalDirectory + fname + separator + strconv.Itoa(j)
+
+			if httpGo.SendFileToNodes(fileShardPath, nodeList, objName, nodeNum, 0, j, &wg, "") {
+				exitStatus = true
+			} else {
+				fmt.Println("Data shard %i reconstructed! ", j)
+			}
+
+			// Every 'numNodes' iterations, send chunk to next address, first send to different nodes, then change address
+			//if currentNum == 0 {
+				//currentAdr = (currentAdr + 1) % len(nodeList[currentNum])
+			//}
+
+		}
+
+		wg.Wait()
+*/
 		// Close output.
 		for i := range out {
 			if out[i] != nil {
@@ -179,7 +215,8 @@ func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, s
 		ok, err = enc.Verify(shards)
 		if !ok {
 			fmt.Println("Verification failed after reconstruction, data likely corrupted:", err)
-			os.Exit(1)
+			exitStatus = true
+			return exitStatus
 		}
 		CheckErr(err)
 
@@ -199,6 +236,7 @@ func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, s
 	err = enc.Join(f, shards, int64(dataShards)*size)
 	CheckErr(err)
 
+	return exitStatus
 }
 
 

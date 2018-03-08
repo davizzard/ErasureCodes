@@ -24,6 +24,7 @@ import (
 
 const fileChunk = 1*(1<<10) // 1 KB
 //const fileChunk = 4*(1<<20) // 4 MB
+const parityShards = 2
 
 type msg struct {
 	NodeList [][]string
@@ -116,11 +117,6 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 
 
 
-
-
-
-
-
 	// Ask tracker for nodes to save object
 	requestJson = `{"Quantity":"` + strconv.Itoa(numNodes) + `","ID":"` + fullName + `","Type":"object"}`
 	reader = strings.NewReader(requestJson)
@@ -166,12 +162,10 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 		putOK <- false
 		return
 	}
-	var currentPart int = 0
-	var parityShards int
-	var partSize int
-	var currentNum int = 0
+	var currentPart = 0
+	var currentNum = 0
+	var currentAdr = 0
 	var fName string
-	var partBuffer []byte
 	var writer *multipart.Writer
 	var buf bytes.Buffer
 	_, _ = writer, buf // avoiding declared but not used
@@ -210,39 +204,13 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 		httpVar.TotalNumMutex.Unlock()
 		*/
 
-	parityShards = 2
 	totalPartsNum, fName, size = API.EncodeFileAPI(filePath, fileChunk, parityShards, putOK)
 	fmt.Println("EncodeFileApi Success!")
 
-	var currentAdr int = 0
-
-	// Prepare nodes for content
-	for currentNum < len(nodeList) {
-		rpipe, wpipe := io.Pipe()
-		mHash := putObjMSg{ID:fullName}
-		go func() {
-			// save buffer to object
-			err = json.NewEncoder(wpipe).Encode(mHash)
-			if err != nil {
-				fmt.Println("Error encoding to pipe ", err.Error())
-				os.Remove(filePath)
-				//file.Close()
-				putOK <- false
-				return		// Todo: does this exit only goRoutine?
-			}
-			defer wpipe.Close()                     // close pipe when go routine finishes
-		}()
-
-		_, err = http.Post("http://" + nodeList[currentNum][currentAdr] + "/prepSN", "application/json", rpipe)
-		if err != nil {
-			fmt.Println("to prepSN, Error sending http POST ", err.Error())
-			os.Remove(filePath)
-			//file.Close()
-			putOK <- false
-			return
-		}
-		currentNum++
+	if PrepareNodes(nodeList, fullName, currentNum, currentAdr, filePath) {
+		putOK <- false
 	}
+
 	currentNum = 0
 
 	// wait group will wait for all goroutines (one goroutine per chunk send)
@@ -253,50 +221,12 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 		//partBuffer = make([]byte, partSize)
 		//_, err = file.Read(partBuffer)                // Get chunk
 
-		fileShardPath := conf.LocalDirectory + fName + "." + strconv.Itoa(currentPart)
+		fileShardPath := conf.LocalDirectory + fName + "/" + strconv.Itoa(currentPart)
 		//fileShardPath := "/root/Desktop/empty/go/src/davizzard/ErasureCodes/src/goObjStore/src/NEW" + strconv.Itoa(currentPart)
 
-		fileShard, err := os.Open(fileShardPath)
-		API.CheckErr(err)
-
-		fileShardInfo, err := fileShard.Stat()
-		API.CheckErr(err)
-
-		text := strconv.FormatInt(fileShardInfo.Size(), 10)        // size
-		partSize, _ = strconv.Atoi(text)
-
-		partBuffer = make([]byte, partSize)
-		_, err = fileShard.Read(partBuffer)
-		API.CheckErr(err)
-
-		m := msg{NodeList:nodeList, Num:len(nodeList), Hash:fullName, Text:partBuffer, CurrentNode:currentNum, Name: currentPart}
-		go func(m2 msg, url string) {
-			 httpVar.SendReady <- 1
-			r, w := io.Pipe()
-			go func() {
-				// save buffer to object
-				err = json.NewEncoder(w).Encode(m2)
-				if err != nil {
-					fmt.Println("Error encoding to pipe ", err.Error())
-					os.Remove(filePath)
-					fileShard.Close()
-					putOK <- false
-					return
-				}
-				defer w.Close()                 // Close pipe //when go routine finishes
-			}()
-
-			_, err := http.Post(url, "application/json", r)
-			if err != nil {
-				fmt.Println("Error sending http POST ", err.Error())
-				os.Remove(filePath)
-				fileShard.Close()
-				putOK <- false
-				return
-			}
-			defer wg.Done()
-			 <-httpVar.SendReady
-		}(m, "http://" + nodeList[currentNum][currentAdr] + "/SNPutObj")
+		if SendFileToNodes(fileShardPath, nodeList, fullName, currentNum, currentAdr, currentPart, &wg, filePath) {
+			putOK <- false
+		}
 
 		currentPart++
 		currentNum = (currentNum + 1) % len(nodeList)
@@ -305,13 +235,8 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 		if currentNum == 0 {
 			currentAdr = (currentAdr + 1) % len(nodeList[currentNum])
 		}
-		fileShard.Close()
-		//wg.Wait()
-		//os.Remove(fileShardPath)
 	}
-	//wg.Wait()
-	//os.Remove(filePath)
-	//file.Close()
+	wg.Wait()
 
 	// Add object to the container's object map
 	currentPeer= rand.Intn(len(nodeList))
@@ -335,12 +260,115 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 		return
 
 	}
-	if resp.StatusCode != http.StatusOK{
+	if resp.StatusCode != http.StatusOK {
 		putOK <- false
 		return
 	}
 
+	err = os.RemoveAll(conf.LocalDirectory + "/" + fName)
+	if err != nil {
+		fmt.Println("error removing path and subDirs")
+	}
+
 	putOK <- true
+
+	return
+}
+
+
+
+func PrepareNodes(nodeList [][]string, fullName string, currentNum int, address int, filePath string) (bool) {
+	var exitStatus = false
+	// Prepare nodes for content
+	for currentNum < len(nodeList) {
+		rpipe, wpipe := io.Pipe()
+		mHash := putObjMSg{ID:fullName}
+		go func() {
+			// save buffer to object
+			err := json.NewEncoder(wpipe).Encode(mHash)
+			if err != nil {
+				fmt.Println("Error encoding to pipe ", err.Error())
+				if filePath != "" {
+					os.Remove(filePath)
+				}
+				exitStatus = true
+				return
+			}
+			defer wpipe.Close()                     // close pipe when go routine finishes
+		}()
+
+		_, err := http.Post("http://" + nodeList[currentNum][address] + "/prepSN", "application/json", rpipe)
+		if err != nil {
+			fmt.Println("to prepSN, Error sending http POST ", err.Error())
+			if filePath != "" {
+				os.Remove(filePath)
+			}
+			return true
+		}
+		currentNum++
+	}
+	return exitStatus
+}
+
+
+func SendFileToNodes(fileShardPath string, nodeList [][]string, fullName string, nodeNum int, address int, currentPart int, wg *sync.WaitGroup, filePath string) (bool) {
+	var partSize int
+	var partBuffer []byte
+	var exitStatus = false
+
+	fileShard, err := os.Open(fileShardPath)
+	API.CheckErr(err)
+
+	fileShardInfo, err := fileShard.Stat()
+	API.CheckErr(err)
+
+	text := strconv.FormatInt(fileShardInfo.Size(), 10) // size
+	partSize, _ = strconv.Atoi(text)
+
+	partBuffer = make([]byte, partSize)
+	_, err = fileShard.Read(partBuffer)
+
+	API.CheckErr(err)
+	m := msg{NodeList:nodeList, Num:len(nodeList), Hash:fullName, Text:partBuffer, CurrentNode:nodeNum, Name: currentPart}
+	go func(m2 msg, url string) {
+		httpVar.SendReady <- 1
+		r, w := io.Pipe()
+		go func() {
+			// save buffer to object
+			err := json.NewEncoder(w).Encode(m2)
+			if err != nil {
+				fmt.Println("Error encoding to pipe ", err.Error())
+				if filePath != "" {
+					os.Remove(filePath)
+				}
+				fileShard.Close()
+				exitStatus = true
+				return
+			}
+			defer w.Close()                 // Close pipe //when go routine finishes
+		}()
+
+		_, err := http.Post(url, "application/json", r)
+		if err != nil {
+			fmt.Println("Error sending http POST ", err.Error())
+			os.Remove(filePath)
+			fileShard.Close()
+			exitStatus = true
+			return
+		}
+		defer wg.Done()
+		<-httpVar.SendReady
+	}(m, "http://" + nodeList[nodeNum][address] + "/SNPutObj")
+
+	fileShard.Close()
+
+	return exitStatus
+	//wg.Wait()
+		//os.Remove(fileShardPath)
+	//wg.Wait()
+	//os.Remove(filePath)
+	//file.Close()
+
 }
 
 
@@ -376,10 +404,13 @@ type jsonKeyURL struct {
 	GetID int		`json:"GetID"`
 	NumParts int		`json:"NumParts"`
 	NumParity int		`json:"NumParity"`
+	NodeList [][]string `json: "NodeList"`
+	ShardsInNodes int `json: "ShardsInNodes"`
 }
 
 
 func GetObjProxy(fullName string, proxyAddr []string, trackerAddr string, getOK chan bool, account string, container string, objName string,){
+	fmt.Println("GetObjProxy init.")
 	time.Sleep(1 * time.Second)
 	startGet=time.Now()
 	var err error
@@ -427,13 +458,17 @@ func GetObjProxy(fullName string, proxyAddr []string, trackerAddr string, getOK 
 	httpVar.NumGetsMap[getID]=0
 
 	acc := GetAccountProxy(account)
+	numParts := acc.Containers[container].Objs[objName].PartsNum
+	numParity := acc.Containers[container].Objs[objName].ParityNum
 
 	var currentAddr int = rand.Intn(conf.PortsPerNode)
+
+	httpVar.WaitingGroupNodes[getID] = new(sync.WaitGroup)
 
 	// For each node ask for all their Proxy-pieces
 	for index, node := range nodeList {
 		r, w :=io.Pipe()			// create pipe
-		k:=jsonKeyURL{Key:fullName, URL:proxyAddr[index]+"/ReturnObjProxy", Account: account, Container:container, Object:objName, GetID:getID, NumParts:acc.Containers[container].Objs[objName].PartsNum, NumParity:acc.Containers[container].Objs[objName].ParityNum}
+		k:=jsonKeyURL{Key:fullName, URL:proxyAddr[index]+"/ReturnObjProxy", Account: account, Container:container, Object:objName, GetID:getID, NumParts:numParts, NumParity:numParity, NodeList:nodeList}
 		go func() {
 			defer w.Close()			// close pipe when go routine finishes
 			// save buffer to object
@@ -462,13 +497,51 @@ func GetObjProxy(fullName string, proxyAddr []string, trackerAddr string, getOK 
 
 	}
 
+	// Waiting until all chunks are processed
+	(*httpVar.WaitingGroupNodes[getID]).Wait()
+
+	httpVar.GetMutex.Lock()
+	numChunks := httpVar.NumGetsMap[getID]
+	httpVar.GetMutex.Unlock()
+
+	if numChunks >= numParts - numParity {
+		httpVar.TotalNumMutex.Lock()
+		fmt.Println("GatherPieces result:", GatherPieces(fullName, objName, numParts, numParity, nodeList))
+		httpVar.TotalNumMutex.Unlock()
+	} else {
+		fmt.Printf("Unable to get object: %d shards found. Minimum %d shards needed.\n", numChunks, numParts - numParity)
+	}
+
+	httpVar.GetMutex.Lock()
+	delete(httpVar.NumGetsMap, getID)
+	httpVar.GetMutex.Unlock()
+
+/*
+	// Calling ReturnObjProxy to gather all the pieces
+	_, w := io.Pipe()			// create pipe
+	k:=jsonKeyURL{Key:fullName, URL:proxyAddr[0]+"/ReturnObjProxy", Account: account, Container:container, Object:objName, GetID:getID, NumParts:acc.Containers[container].Objs[objName].PartsNum, NumParity:acc.Containers[container].Objs[objName].ParityNum, NodeList:nodeList}
+	go func() {
+		defer w.Close()			// close pipe when go routine finishes
+		// save buffer to object
+		fmt.Println("HOLA!")
+		err=json.NewEncoder(w).Encode(&k)
+		if err != nil {
+			fmt.Println("GetObjProxy: Error encoding to pipe ", err.Error())
+			getOK <- false
+			return
+
+		}
+	}()
+*/
+	fmt.Println("GetObjProxy end.")
 	getOK <- true
 
 
 }
 
-func ReturnObjProxy(w http.ResponseWriter, r *http.Request) {
 
+func ReturnObjProxy(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("ReturnObjProxy init.")
 	var getmsg getMsg
 
 	// Read request
@@ -499,19 +572,11 @@ func ReturnObjProxy(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("Peer: error creating/writing file p2p", err.Error())
 	}
 
-	// Gather pieces to a single file
-	httpVar.TotalNumMutex.Lock()
-	if httpVar.NumGetsMap[getmsg.GetID] == getmsg.Parts {
-		fmt.Println("GatherPieces result:", GatherPieces(getmsg.Key,getmsg.Parts, getmsg.Parity))
-		httpVar.GetMutex.Lock()
-		delete(httpVar.NumGetsMap, getmsg.GetID)
-		httpVar.GetMutex.Unlock()
-
-	}
-	httpVar.TotalNumMutex.Unlock()
-
+	fmt.Println("NumGetsMap: ", httpVar.NumGetsMap[getmsg.GetID])
+	fmt.Println("getmsg.Parts: ", getmsg.Parts)
 
 }
+
 
 /*
 CheckPieces walks through the subfiles directory, creates a new file to be filled out with the content of each subfile,
@@ -1022,7 +1087,7 @@ and compares the new hash with the original one.
 Returns true if both hash are identic and false if not
 */
 
-func GatherPieces(key string , totalParts int, parityShards int) bool{
+func GatherPieces(key string , objName string, totalParts int, parityShards int, nodeList [][]string) bool{
 
 	/*
 	// Checking Get output (locally)
@@ -1083,11 +1148,15 @@ func GatherPieces(key string , totalParts int, parityShards int) bool{
 
 	}
 	*/
-
+	fmt.Println("GATHER PIECES")
 	// Checking Get output (locally)
 	path=os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/local/"+key+"/"
 
-	API.DecodeFileAPI(path, key, totalParts-parityShards, parityShards, conf.ChunkProxyName, nil)
+	//os.Remove(path+"NEW0")
+	//os.Remove(path+"NEW18")
+	//fmt.Println("IN PROXY: FILES REMOVED.")
+
+	API.DecodeFileAPI(path, key, totalParts-parityShards, parityShards, conf.ChunkProxyName, objName, nodeList)
 
 	err := os.RemoveAll(path)
 	if err != nil {

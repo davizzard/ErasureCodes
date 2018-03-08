@@ -205,9 +205,11 @@ func SNPutObjP2PRequest(w http.ResponseWriter, r *http.Request) {
 }
 
 func SNObjGetChunks(w http.ResponseWriter, r *http.Request){
+	fmt.Println("GetChunks init.")
 	// Get node ID
 	var nodeIDint int = int(r.Host[len(r.Host) - 1] - '0')
 	var nodeID string = strconv.Itoa(nodeIDint)
+
 	var keyURL jsonKeyURL
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
@@ -231,64 +233,74 @@ func SNObjGetChunks(w http.ResponseWriter, r *http.Request){
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
-	go SNPutObjSendChunksToProxy(nodeID, keyURL.Key, keyURL.URL, keyURL.NumParts, keyURL.NumParity, keyURL.GetID)
+	go SNPutObjSendChunksToProxy(nodeID, keyURL.NodeList, keyURL.Key, keyURL.URL, keyURL.NumParts, keyURL.NumParity, keyURL.GetID, keyURL.ShardsInNodes)
 
-
+	fmt.Println("GetChunks end.")
 }
 
 type getMsg struct {
 	Text   []byte
 	Name   string
 	NodeID string
+	NodeList [][]string
 	Key    string
 	Parts  int
 	Parity  int
 	GetID int
+	ShardsInNodes int
 }
-func SNPutObjSendChunksToProxy(nodeID string, key string, URL string, PartsNum int, ParityNum int, getID int){
+func SNPutObjSendChunksToProxy(nodeID string, nodeList [][]string, key string, URL string, PartsNum int, ParityNum int, getID int, shardsInNodes int){
+	//var wg *sync.WaitGroup
+	(*httpVar.WaitingGroupNodes[getID]).Add(1)
+
+
 	proxyURL:="http://"+URL
 
 	// for each proxy-name in directory send
 	filepath.Walk(path + "/src/data/"+key+"/"+nodeID, func(path string, info os.FileInfo, err error) error {
-
-		if strings.Contains(info.Name(),conf.ChunkProxyName) {
-			partBuffer:=make([]byte,info.Size())
-			file, err := os.Open(path)
-			if err != nil {
-				fmt.Println("sendChunksToProxy error opening file ",err.Error())
-				return nil
-			}
-			_, err = file.Read(partBuffer)
-			if err != nil {
-				fmt.Println("sendChunksToProxy error opening file ",err.Error())
-				return nil
-			}
-			m:=getMsg{Text:partBuffer, Name: info.Name(), NodeID:nodeID, Key:key, Parts:PartsNum, Parity:ParityNum, GetID:getID}
-			r, w :=io.Pipe()			// create pipe
-			go func() {
-				defer w.Close()			// close pipe when go routine finishes
-				// save buffer to object
-				err=json.NewEncoder(w).Encode(&m)
+		if err != nil {
+			fmt.Printf("Storage Node with ID %q is unavailable: %v\n", nodeID, err)
+		} else {
+			if strings.Contains(info.Name(),conf.ChunkProxyName) {
+				partBuffer:=make([]byte,info.Size())
+				file, err := os.Open(path)
 				if err != nil {
-					fmt.Println("Error encoding to pipe ", err.Error())
-					return
+					fmt.Println("sendChunksToProxy error opening file ",err.Error())
+					return nil
 				}
-			}()
-			res, err := http.Post(proxyURL,"application/json", r )
-			if err != nil {
-				fmt.Println("sendChunksToProxy: error creating request: ",err.Error())
-				return nil
-			}
-			if err := res.Body.Close(); err != nil {
-				fmt.Println(err)
-				return nil
+				_, err = file.Read(partBuffer)
+				if err != nil {
+					fmt.Println("sendChunksToProxy error opening file ",err.Error())
+					return nil
+				}
+				m:=getMsg{Text:partBuffer, Name: info.Name(), NodeID:nodeID, NodeList:nodeList, Key:key, Parts:PartsNum, Parity:ParityNum, GetID:getID, ShardsInNodes:shardsInNodes}
+				r, w :=io.Pipe()			// create pipe
+				go func() {
+					defer w.Close()			// close pipe when go routine finishes
+					// save buffer to object
+					err=json.NewEncoder(w).Encode(&m)
+					if err != nil {
+						fmt.Println("Error encoding to pipe ", err.Error())
+						return
+					}
+				}()
+				res, err := http.Post(proxyURL,"application/json", r )
+				if err != nil {
+					fmt.Println("sendChunksToProxy: error creating request: ",err.Error())
+					return nil
+				}
+				if err := res.Body.Close(); err != nil {
+					fmt.Println(err)
+					return nil
+				}
 			}
 		}
 
 
 		return nil
 	})
-
+	(*httpVar.WaitingGroupNodes[getID]).Done()
+	fmt.Println("SNPutObjSendChunksToProxy ended.")
 }
 
 type MarshalledAcc struct {
