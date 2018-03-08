@@ -1,4 +1,4 @@
-package API
+package httpGo
 
 import (
 	"fmt"
@@ -11,6 +11,7 @@ import (
 	"time"
 	"github.com/davizzard/ErasureCodes/src/goObjStore/src/httpVar"
 	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
+	"sync"
 )
 
 
@@ -132,10 +133,9 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 
 
 
-func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, separator string, objName string, nodeList [][]string) (bool) {
+func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, separator string, nodeList [][]string) (bool) {
 	defer elapsed("DecodeFileAPI")()
-	var missingShardsCount = 0
-	var missingShards = make([]int, dataShards+parityShards)
+	var missingShards []int
 	var exitStatus = false
 
 	fmt.Printf("Decoding file... Data Shards: %d. Parity shards: %d\n", dataShards, parityShards)
@@ -165,8 +165,7 @@ func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, s
 				fmt.Println("Creating", outfn)
 				out[i], err = os.Create(outfn)
 				CheckErr(err)
-				missingShards[missingShardsCount] = i
-				missingShardsCount++
+				missingShards = append(missingShards, i)
 			}
 		}
 		err = enc.Reconstruct(shards, out)
@@ -175,24 +174,19 @@ func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, s
 			exitStatus = true
 			return exitStatus
 		}
-/*
-		// Preparing Nodes to send reconstructed shards
-		if httpGo.PrepareNodes(nodeList, objName, 0, 0, "") {
-			exitStatus = true
-		}
-
+		fmt.Printf("MissingShards: %d\n", len(missingShards))
 		//Sending reconstructed shards to Nodes
 		var wg sync.WaitGroup
-		wg.Add(missingShardsCount)
+		wg.Add(len(missingShards))
 
-		for j := range missingShards {
+		for _, j := range missingShards {
 			nodeNum := j % len(nodeList)
-			fileShardPath := conf.LocalDirectory + fname + separator + strconv.Itoa(j)
+			fileShardPath := fname + separator + strconv.Itoa(j)
 
-			if httpGo.SendFileToNodes(fileShardPath, nodeList, objName, nodeNum, 0, j, &wg, "") {
+			if SendFileToNodes(fileShardPath, nodeList, key, nodeNum, 0, j, &wg, "") {
 				exitStatus = true
 			} else {
-				fmt.Println("Data shard %i reconstructed! ", j)
+				fmt.Printf("Data shard %d reconstructed!\n", j)
 			}
 
 			// Every 'numNodes' iterations, send chunk to next address, first send to different nodes, then change address
@@ -203,7 +197,7 @@ func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, s
 		}
 
 		wg.Wait()
-*/
+
 		// Close output.
 		for i := range out {
 			if out[i] != nil {
@@ -245,7 +239,7 @@ func openInput(dataShards, parShards int, fname string, separator string) (r []i
 	shards := make([]io.Reader, dataShards+parShards)
 	for i := range shards {
 		infn := fmt.Sprintf("%s%s%d", fname, separator, i)
-		fmt.Println("Opening", infn)
+		//fmt.Println("Opening", infn)
 		f, err := os.Open(infn)
 		if err != nil {
 			fmt.Println("Error reading file", err)

@@ -67,6 +67,7 @@ func prepSN(w http.ResponseWriter, r *http.Request){
 }
 
 func SNPutObj(w http.ResponseWriter, r *http.Request){
+	var path = os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore"
 	var listenWg sync.WaitGroup
 	listenWg.Add(1)
 	go func() {
@@ -162,6 +163,7 @@ func SNPutObj(w http.ResponseWriter, r *http.Request){
 
 // Listen to other peers
 func SNPutObjP2PRequest(w http.ResponseWriter, r *http.Request) {
+	var path = os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore"
 	var chunk msg
 	// Get peer ID
 	var peerID int = int(r.Host[len(r.Host) - 1] - '0')
@@ -250,7 +252,7 @@ type getMsg struct {
 	ShardsInNodes int
 }
 func SNPutObjSendChunksToProxy(nodeID string, nodeList [][]string, key string, URL string, PartsNum int, ParityNum int, getID int, shardsInNodes int){
-	//var wg *sync.WaitGroup
+	var path = os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore"
 	(*httpVar.WaitingGroupNodes[getID]).Add(1)
 
 

@@ -19,7 +19,6 @@ import (
 	"sync"
 	"math/rand"
 	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
-	"github.com/davizzard/ErasureCodes/src/API"
 )
 
 const fileChunk = 1*(1<<10) // 1 KB
@@ -204,7 +203,7 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 		httpVar.TotalNumMutex.Unlock()
 		*/
 
-	totalPartsNum, fName, size = API.EncodeFileAPI(filePath, fileChunk, parityShards, putOK)
+	totalPartsNum, fName, size = EncodeFileAPI(filePath, fileChunk, parityShards, putOK)
 	fmt.Println("EncodeFileApi Success!")
 
 	if PrepareNodes(nodeList, fullName, currentNum, currentAdr, filePath) {
@@ -317,10 +316,10 @@ func SendFileToNodes(fileShardPath string, nodeList [][]string, fullName string,
 	var exitStatus = false
 
 	fileShard, err := os.Open(fileShardPath)
-	API.CheckErr(err)
+	CheckErr(err)
 
 	fileShardInfo, err := fileShard.Stat()
-	API.CheckErr(err)
+	CheckErr(err)
 
 	text := strconv.FormatInt(fileShardInfo.Size(), 10) // size
 	partSize, _ = strconv.Atoi(text)
@@ -328,7 +327,7 @@ func SendFileToNodes(fileShardPath string, nodeList [][]string, fullName string,
 	partBuffer = make([]byte, partSize)
 	_, err = fileShard.Read(partBuffer)
 
-	API.CheckErr(err)
+	CheckErr(err)
 	m := msg{NodeList:nodeList, Num:len(nodeList), Hash:fullName, Text:partBuffer, CurrentNode:nodeNum, Name: currentPart}
 	go func(m2 msg, url string) {
 		httpVar.SendReady <- 1
@@ -506,7 +505,7 @@ func GetObjProxy(fullName string, proxyAddr []string, trackerAddr string, getOK 
 
 	if numChunks >= numParts - numParity {
 		httpVar.TotalNumMutex.Lock()
-		fmt.Println("GatherPieces result:", GatherPieces(fullName, objName, numParts, numParity, nodeList))
+		fmt.Println("GatherPieces result:", GatherPieces(fullName, numParts, numParity, nodeList))
 		httpVar.TotalNumMutex.Unlock()
 	} else {
 		fmt.Printf("Unable to get object: %d shards found. Minimum %d shards needed.\n", numChunks, numParts - numParity)
@@ -1087,7 +1086,7 @@ and compares the new hash with the original one.
 Returns true if both hash are identic and false if not
 */
 
-func GatherPieces(key string , objName string, totalParts int, parityShards int, nodeList [][]string) bool{
+func GatherPieces(key string , totalParts int, parityShards int, nodeList [][]string) bool{
 
 	/*
 	// Checking Get output (locally)
@@ -1156,7 +1155,7 @@ func GatherPieces(key string , objName string, totalParts int, parityShards int,
 	//os.Remove(path+"NEW18")
 	//fmt.Println("IN PROXY: FILES REMOVED.")
 
-	API.DecodeFileAPI(path, key, totalParts-parityShards, parityShards, conf.ChunkProxyName, objName, nodeList)
+	DecodeFileAPI(path, key, totalParts-parityShards, parityShards, conf.ChunkProxyName, nodeList)
 
 	err := os.RemoveAll(path)
 	if err != nil {
