@@ -303,7 +303,7 @@ func TestCreateAccountAPI(t *testing.T) {
 
 	os.Remove(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/alvarocontainer1obj1/2/NEW0")
 	os.Remove(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/alvarocontainer1obj1/1/NEW1")
-	fmt.Println("FILES REMOVED.")
+	fmt.Println("SHARDS REMOVED.")
 
 
 	fileReplicationCorrect=CheckFileReplication("Account","alvaro",3)
