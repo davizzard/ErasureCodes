@@ -409,7 +409,6 @@ type jsonKeyURL struct {
 
 
 func GetObjProxy(fullName string, proxyAddr []string, trackerAddr string, getOK chan bool, account string, container string, objName string,){
-	fmt.Println("GetObjProxy init.")
 	time.Sleep(1 * time.Second)
 	startGet=time.Now()
 	var err error
@@ -515,23 +514,6 @@ func GetObjProxy(fullName string, proxyAddr []string, trackerAddr string, getOK 
 	delete(httpVar.NumGetsMap, getID)
 	httpVar.GetMutex.Unlock()
 
-/*
-	// Calling ReturnObjProxy to gather all the pieces
-	_, w := io.Pipe()			// create pipe
-	k:=jsonKeyURL{Key:fullName, URL:proxyAddr[0]+"/ReturnObjProxy", Account: account, Container:container, Object:objName, GetID:getID, NumParts:acc.Containers[container].Objs[objName].PartsNum, NumParity:acc.Containers[container].Objs[objName].ParityNum, NodeList:nodeList}
-	go func() {
-		defer w.Close()			// close pipe when go routine finishes
-		// save buffer to object
-		fmt.Println("HOLA!")
-		err=json.NewEncoder(w).Encode(&k)
-		if err != nil {
-			fmt.Println("GetObjProxy: Error encoding to pipe ", err.Error())
-			getOK <- false
-			return
-
-		}
-	}()
-*/
 	fmt.Println("GetObjProxy end.")
 	getOK <- true
 
@@ -540,7 +522,6 @@ func GetObjProxy(fullName string, proxyAddr []string, trackerAddr string, getOK 
 
 
 func ReturnObjProxy(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("ReturnObjProxy init.")
 	var getmsg getMsg
 
 	// Read request
@@ -570,9 +551,6 @@ func ReturnObjProxy(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println("Peer: error creating/writing file p2p", err.Error())
 	}
-
-	fmt.Println("NumGetsMap: ", httpVar.NumGetsMap[getmsg.GetID])
-	fmt.Println("getmsg.Parts: ", getmsg.Parts)
 
 }
 

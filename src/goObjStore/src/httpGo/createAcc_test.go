@@ -301,8 +301,8 @@ func TestCreateAccountAPI(t *testing.T) {
 	}else{t.Error("Obj not created")}
 	fmt.Println("---------------------------------------------------")
 
-	os.Remove(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/alvarocontainer1obj1/1/NEW0")
-	os.Remove(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/alvarocontainer1obj1/1/NEW18")
+	os.Remove(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/alvarocontainer1obj1/2/NEW0")
+	os.Remove(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/alvarocontainer1obj1/1/NEW1")
 	fmt.Println("FILES REMOVED.")
 
 

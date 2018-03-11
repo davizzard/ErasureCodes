@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"math"
 	"time"
-	"github.com/davizzard/ErasureCodes/src/goObjStore/src/httpVar"
 	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
 	"sync"
 )
@@ -37,38 +36,38 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 		putOK <- false
 		CheckErr(err)
 	}
-	/*
-	for math.Ceil(math.Mod(float64(size), float64(fileChunk))) != 0 {
-		fmt.Print("Iteration nº: ")
-		fmt.Println(counter)
-		fileChunk++
-		counter++
-	}
-	*/
-	fmt.Print("Filechunk size (bytes) BEFORE is: ")
-	fmt.Println(fileChunk)
 
-	httpVar.TotalNumMutex.Lock()
+	fmt.Printf("Filechunk size BEFORE: %d bytes.\n", fileChunk)
+
 	dataShards = int(math.Ceil(float64(size) / float64(fileChunk)))
-	httpVar.TotalNumMutex.Unlock()
+	if (dataShards > 257) {
+		dataShards = 257
+	}
+	//startingDataShards := dataShards
+	//if (startingDataShards > 257) {
+	//	startingDataShards = 257
+	//}
 
+	fmt.Println("Finding the correct amount of Data shards...")
 	for math.Ceil(math.Mod(float64(size), float64(dataShards))) != 0 {
-		fmt.Print("Iteration nº: ")
-		fmt.Println(counter)
-		dataShards++
+		fmt.Printf("Iteration nº: %d\n", counter)
+		dataShards--
 		counter++
 	}
-
+/*
+	if dataShards > 257 {
+		fmt.Println("Too many Data shards. Proceding to divide the file into less shards...")
+		dataShards = startingDataShards-1
+		for (math.Ceil(math.Mod(float64(size), float64(dataShards))) != 0) {
+			fmt.Printf("Iteration nº: %d\n", counter)
+			dataShards--
+			counter++
+		}
+	}
+*/
 	fileChunk = int(math.Ceil(float64(size) / float64(dataShards+parityShards)))
 
-	fmt.Print("Filechunk size (bytes) AFTER is: ")
-	fmt.Println(fileChunk)
-
-	// Checking arguments.
-	if dataShards > 257 {
-		fmt.Fprintf(os.Stderr, "Error: Too many data shards\n")
-		os.Exit(1)
-	}
+	fmt.Printf("Filechunk size AFTER: %d bytes.\n", fileChunk)
 
 	// Create encoding matrix.
 	enc, err := reedsolomon.NewStream(dataShards, parityShards)
@@ -77,8 +76,6 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 
 	shards := dataShards + parityShards
 	out := make([]*os.File, shards)
-
-	fmt.Println("Shards: ", shards)
 
 	// Create the resulting files.
 	_, file := filepath.Split(fname)
@@ -174,11 +171,13 @@ func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, s
 			exitStatus = true
 			return exitStatus
 		}
-		fmt.Printf("MissingShards: %d\n", len(missingShards))
+		fmt.Printf("Missing shards: %d\n", len(missingShards))
+
 		//Sending reconstructed shards to Nodes
 		var wg sync.WaitGroup
 		wg.Add(len(missingShards))
 
+		fmt.Println("Resending missing shards to Storage Nodes...")
 		for _, j := range missingShards {
 			nodeNum := j % len(nodeList)
 			fileShardPath := fname + separator + strconv.Itoa(j)
@@ -186,14 +185,8 @@ func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, s
 			if SendFileToNodes(fileShardPath, nodeList, key, nodeNum, 0, j, &wg, "") {
 				exitStatus = true
 			} else {
-				fmt.Printf("Data shard %d reconstructed!\n", j)
+				fmt.Printf("Data shard %d reconstructed and succesfully sent to Storage Node with ID %d.\n", j, nodeNum)
 			}
-
-			// Every 'numNodes' iterations, send chunk to next address, first send to different nodes, then change address
-			//if currentNum == 0 {
-				//currentAdr = (currentAdr + 1) % len(nodeList[currentNum])
-			//}
-
 		}
 
 		wg.Wait()
@@ -226,7 +219,6 @@ func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, s
 	shards, size, err = openInput(dataShards, parityShards, fname, separator)
 	CheckErr(err)
 
-	// We don't know the exact filesize.
 	err = enc.Join(f, shards, int64(dataShards)*size)
 	CheckErr(err)
 
