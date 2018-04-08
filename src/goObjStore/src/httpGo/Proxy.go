@@ -404,7 +404,6 @@ type jsonKeyURL struct {
 	NumParts int		`json:"NumParts"`
 	NumParity int		`json:"NumParity"`
 	NodeList [][]string `json: "NodeList"`
-	ShardsInNodes int `json: "ShardsInNodes"`
 }
 
 
@@ -508,6 +507,7 @@ func GetObjProxy(fullName string, proxyAddr []string, trackerAddr string, getOK 
 		httpVar.TotalNumMutex.Unlock()
 	} else {
 		fmt.Printf("Unable to get object: %d shards found. Minimum %d shards needed.\n", numChunks, numParts - numParity)
+		getOK <- false
 	}
 
 	httpVar.GetMutex.Lock()
@@ -1057,13 +1057,6 @@ func CheckFileReplication(fileType string, name string, replication int) bool{
 }
 
 
-/*
-CheckPieces walks through the subfiles directory, creates a new file to be filled out with the content of each subfile,
-and compares the new hash with the original one.
-@param path to the file we want to split
-Returns true if both hash are identic and false if not
-*/
-
 func GatherPieces(key string , totalParts int, parityShards int, nodeList [][]string) bool{
 
 	/*
@@ -1138,8 +1131,9 @@ func GatherPieces(key string , totalParts int, parityShards int, nodeList [][]st
 	err := os.RemoveAll(path)
 	if err != nil {
 		fmt.Println("error removing path and subDirs")
+		return true
 	}
-	return true
+	return false
 }
 
 

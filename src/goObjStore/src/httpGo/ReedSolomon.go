@@ -79,11 +79,9 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 
 	// Create the resulting files.
 	_, file := filepath.Split(fname)
-
 	dir := conf.LocalDirectory + "/" + file
 	os.Mkdir(dir, 0777)
 	dir = dir + "/"
-
 	for i := range out {
 		outfn := fmt.Sprintf("%d", i)
 		//outfn := fmt.Sprintf("NEW%d", i)

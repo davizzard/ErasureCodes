@@ -77,7 +77,7 @@ func SNPutObj(w http.ResponseWriter, r *http.Request){
 
 		// Listen to tracker
 		if r.Method == http.MethodPost {
-                        var wg sync.WaitGroup
+			//var wg sync.WaitGroup		--> REPLICATION DISABLED
 
 
 
@@ -115,10 +115,11 @@ func SNPutObj(w http.ResponseWriter, r *http.Request){
 
 			}
 
-                        wg.Add(len(chunk.NodeList))
+                        //wg.Add(len(chunk.NodeList))	--> REPLICATION DISABLED
 
 			// Send chunk to peers
 			// sending only one chunk to the rest of peers once, don't need to use multiple addr per peer
+			/*	--> REPLICATION DISABLED
 			var currentAddr int = rand.Intn(len(chunk.NodeList))
 			for _, peer := range chunk.NodeList {
 				peerURL := "http://" + peer[currentAddr] + "/SNPutObjP2PRequest"
@@ -149,7 +150,7 @@ func SNPutObj(w http.ResponseWriter, r *http.Request){
 			}
 			wg.Wait()
 			chunk=msg{}
-
+*/
 		}
 		listenWg.Done()
 	}()
@@ -235,7 +236,7 @@ func SNObjGetChunks(w http.ResponseWriter, r *http.Request){
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
-	go SNPutObjSendChunksToProxy(nodeID, keyURL.NodeList, keyURL.Key, keyURL.URL, keyURL.NumParts, keyURL.NumParity, keyURL.GetID, keyURL.ShardsInNodes)
+	go SNPutObjSendChunksToProxy(nodeID, keyURL.NodeList, keyURL.Key, keyURL.URL, keyURL.NumParts, keyURL.NumParity, keyURL.GetID)
 
 	fmt.Println("GetChunks end.")
 }
@@ -249,9 +250,8 @@ type getMsg struct {
 	Parts  int
 	Parity  int
 	GetID int
-	ShardsInNodes int
 }
-func SNPutObjSendChunksToProxy(nodeID string, nodeList [][]string, key string, URL string, PartsNum int, ParityNum int, getID int, shardsInNodes int){
+func SNPutObjSendChunksToProxy(nodeID string, nodeList [][]string, key string, URL string, PartsNum int, ParityNum int, getID int){
 	var path = os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore"
 	(*httpVar.WaitingGroupNodes[getID]).Add(1)
 
@@ -275,7 +275,7 @@ func SNPutObjSendChunksToProxy(nodeID string, nodeList [][]string, key string, U
 					fmt.Println("sendChunksToProxy error opening file ",err.Error())
 					return nil
 				}
-				m:=getMsg{Text:partBuffer, Name: info.Name(), NodeID:nodeID, NodeList:nodeList, Key:key, Parts:PartsNum, Parity:ParityNum, GetID:getID, ShardsInNodes:shardsInNodes}
+				m:=getMsg{Text:partBuffer, Name: info.Name(), NodeID:nodeID, NodeList:nodeList, Key:key, Parts:PartsNum, Parity:ParityNum, GetID:getID}
 				r, w :=io.Pipe()			// create pipe
 				go func() {
 					defer w.Close()			// close pipe when go routine finishes
