@@ -7,7 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
+	//"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
 )
 func TestCreateAccountAPI(t *testing.T) {
 	router :=MyNewRouter()
@@ -143,63 +143,64 @@ func TestCreateAccountAPI(t *testing.T) {
 		cmdOut []byte
 		err    error
 	)
-	if cmdOut, err = exec.Command(path+"/shellScriptsTests/curlCreateAccSuccess.sh").Output(); err != nil {
-		fmt.Fprintln(os.Stderr, "There was an error running command: ", err)
-		os.Exit(1)
-	}
-	resp := string(cmdOut)
-	fmt.Println("curl response ", resp)
-	if strings.Compare(resp,"201")==0 {
-		fmt.Println(resp+ " created")
-	}else{t.Error("Account not created")}
-	fmt.Println("---------------------------------------------------")
+
+		if cmdOut, err = exec.Command(path+"/shellScriptsTests/curlCreateAccSuccess.sh").Output(); err != nil {
+			fmt.Fprintln(os.Stderr, "There was an error running command: ", err)
+			os.Exit(1)
+		}
+		resp := string(cmdOut)
+		fmt.Println("curl response ", resp)
+		if strings.Compare(resp,"201")==0 {
+			fmt.Println(resp+ " created")
+		}else{t.Error("Account not created")}
+		fmt.Println("---------------------------------------------------")
 
 
-	req, err := http.NewRequest("PUT", "http://localhost:8000/alvaroGO", nil)
-	if err != nil {
-		t.Error(" error creating post request to http://localhost:8000/alvaroGO")
-	}
-	response , err := http.DefaultClient.Do(req)
-	if err != nil {
-		t.Error("Error doing request")
-	}
-	fmt.Println("response: ",response.StatusCode )
-	if response.StatusCode == 201 {
-		fmt.Println(response.StatusCode," created")
-	} else{
-		t.Error("Account not created")
-	}
-	fmt.Println("---------------------------------------------------")
+		req, err := http.NewRequest("PUT", "http://localhost:8000/alvaroGO", nil)
+		if err != nil {
+			t.Error(" error creating post request to http://localhost:8000/alvaroGO")
+		}
+		response , err := http.DefaultClient.Do(req)
+		if err != nil {
+			t.Error("Error doing request")
+		}
+		fmt.Println("response: ",response.StatusCode )
+		if response.StatusCode == 201 {
+			fmt.Println(response.StatusCode," created")
+		} else{
+			t.Error("Account not created")
+		}
+		fmt.Println("---------------------------------------------------")
+
+	/*
+		fileReplicationCorrect:=CheckFileReplication("Account","alvaro",3)
+		if fileReplicationCorrect==false{
+			t.Error("file replication not correct")
+		}
+		fmt.Println(fileReplicationCorrect)
+		fmt.Println("---------------------------------------------------")
 
 
-	fileReplicationCorrect:=CheckFileReplication("Account","alvaro",3)
-	if fileReplicationCorrect==false{
-		t.Error("file replication not correct")
-	}
-	fmt.Println(fileReplicationCorrect)
-	fmt.Println("---------------------------------------------------")
+		fileReplicationCorrect=CheckFileReplication("Account","alvaroGO",3)
+		if fileReplicationCorrect==false{
+			t.Error("file replication not correct")
+		}
+		fmt.Println(fileReplicationCorrect)
+		fmt.Println("---------------------------------------------------")
 
 
-	fileReplicationCorrect=CheckFileReplication("Account","alvaroGO",3)
-	if fileReplicationCorrect==false{
-		t.Error("file replication not correct")
-	}
-	fmt.Println(fileReplicationCorrect)
-	fmt.Println("---------------------------------------------------")
+		if CheckFileReplication("Account","accountWillFail", 1)==true{
+			t.Error("file replication not correct")
+		} else {fmt.Println("false")}
+		fmt.Println("---------------------------------------------------")
 
 
-	if CheckFileReplication("Account","accountWillFail", 1)==true{
-		t.Error("file replication not correct")
-	} else {fmt.Println("false")}
-	fmt.Println("---------------------------------------------------")
+		if CheckFileReplication("Account", "alvaro", 4)==true{
+			t.Error("file replication not correct")
+		} else {fmt.Println("false")}
+		fmt.Println("---------------------------------------------------")
 
-
-	if CheckFileReplication("Account", "alvaro", 4)==true{
-		t.Error("file replication not correct")
-	} else {fmt.Println("false")}
-	fmt.Println("---------------------------------------------------")
-
-
+	*/
 	if cmdOut, err = exec.Command(path+"/shellScriptsTests/curlPutContSuccess.sh").Output(); err != nil {
 		fmt.Fprintln(os.Stderr, "There was an error running command: ", err)
 		os.Exit(1)
@@ -211,7 +212,7 @@ func TestCreateAccountAPI(t *testing.T) {
 	}else{t.Error("Obj not created")}
 	fmt.Println("---------------------------------------------------")
 
-
+/*
 	if cmdOut, err = exec.Command(path+"/shellScriptsTests/curlPutContFailure.sh").Output(); err != nil {
 		fmt.Fprintln(os.Stderr, "There was an error running command: ", err)
 		os.Exit(1)
@@ -288,7 +289,7 @@ func TestCreateAccountAPI(t *testing.T) {
 	}
 	fmt.Println("---------------------------------------------------")
 
-
+*/
 	// Same Obj Again
 	if cmdOut, err = exec.Command(path+"/shellScriptsTests/curlPutObjSuccess.sh").Output(); err != nil {
 		fmt.Fprintln(os.Stderr, "There was an error running command: ", err)
@@ -301,16 +302,16 @@ func TestCreateAccountAPI(t *testing.T) {
 	}else{t.Error("Obj not created")}
 	fmt.Println("---------------------------------------------------")
 
-	os.Remove(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/alvarocontainer1obj1/2/NEW0")
-	os.Remove(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/alvarocontainer1obj1/1/NEW1")
-	fmt.Println("SHARDS REMOVED.")
+	//os.Remove(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/alvarocontainer1obj1/2/NEW0")
+	//os.Remove(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/alvarocontainer1obj1/1/NEW1")
+	//fmt.Println("SHARDS REMOVED.")
 
 
-	fileReplicationCorrect=CheckFileReplication("Account","alvaro",3)
-	if fileReplicationCorrect==false{
-		t.Error("file replication not correct")
-	}
-	fmt.Println(fileReplicationCorrect)
+	//fileReplicationCorrect=CheckFileReplication("Account","alvaro",3)
+	//if fileReplicationCorrect==false{
+	//	t.Error("file replication not correct")
+	//}
+	//fmt.Println(fileReplicationCorrect)
 	fmt.Println("---------------------------------------------------")
 
 
@@ -324,7 +325,7 @@ func TestCreateAccountAPI(t *testing.T) {
 		fmt.Println(resp+ " OK")
 	}else{t.Error("Obj not obtained")}
 	fmt.Println("---------------------------------------------------")
-
+/*
 	time.Sleep(2* time.Second)
 
 	currentHash := md5sum(conf.DownloadsDirectory + "alvarocontainer1obj1")
@@ -415,7 +416,7 @@ func TestCreateAccountAPI(t *testing.T) {
 
 
 
-
+*/
 	time.AfterFunc(600 * time.Second, func(){
 		if err:= peer1arun.Shutdown(nil); err!=nil{
 			panic(err)

@@ -21,8 +21,8 @@ import (
 	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
 )
 
-const fileChunk = 1*(1<<10) // 1 KB
-//const fileChunk = 4*(1<<20) // 4 MB
+//const fileChunk = 1*(1<<10) // 1 KB
+const fileChunk = 8*(1<<20) // 8 MB
 const parityShards = 2
 
 type msg struct {
