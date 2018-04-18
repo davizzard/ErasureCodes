@@ -136,9 +136,10 @@ func SNPutObj(w http.ResponseWriter, r *http.Request){
 
 
 
-/*
+
 // Listen to other peers
 func SNPutObjP2PRequest(w http.ResponseWriter, r *http.Request) {
+	/*
 	var path = os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore"
 	var chunk msg
 	// Get peer ID
@@ -177,11 +178,10 @@ func SNPutObjP2PRequest(w http.ResponseWriter, r *http.Request) {
 		}
 		httpVar.DirMutex.Unlock()
 
-
-
 	}
+	*/
 }
-*/
+
 func SNObjGetChunks(w http.ResponseWriter, r *http.Request){
 	fmt.Println("GetChunks init.")
 	// Get node ID
