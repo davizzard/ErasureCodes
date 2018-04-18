@@ -172,7 +172,7 @@ func TestCreateAccountAPI(t *testing.T) {
 		}
 		fmt.Println("---------------------------------------------------")
 
-	/*
+
 		fileReplicationCorrect:=CheckFileReplication("Account","alvaro",3)
 		if fileReplicationCorrect==false{
 			t.Error("file replication not correct")
@@ -200,7 +200,7 @@ func TestCreateAccountAPI(t *testing.T) {
 		} else {fmt.Println("false")}
 		fmt.Println("---------------------------------------------------")
 
-	*/
+
 	if cmdOut, err = exec.Command(path+"/shellScriptsTests/curlPutContSuccess.sh").Output(); err != nil {
 		fmt.Fprintln(os.Stderr, "There was an error running command: ", err)
 		os.Exit(1)
@@ -212,7 +212,7 @@ func TestCreateAccountAPI(t *testing.T) {
 	}else{t.Error("Obj not created")}
 	fmt.Println("---------------------------------------------------")
 
-/*
+
 	if cmdOut, err = exec.Command(path+"/shellScriptsTests/curlPutContFailure.sh").Output(); err != nil {
 		fmt.Fprintln(os.Stderr, "There was an error running command: ", err)
 		os.Exit(1)
@@ -289,7 +289,7 @@ func TestCreateAccountAPI(t *testing.T) {
 	}
 	fmt.Println("---------------------------------------------------")
 
-*/
+
 	// Same Obj Again
 	if cmdOut, err = exec.Command(path+"/shellScriptsTests/curlPutObjSuccess.sh").Output(); err != nil {
 		fmt.Fprintln(os.Stderr, "There was an error running command: ", err)
@@ -302,16 +302,16 @@ func TestCreateAccountAPI(t *testing.T) {
 	}else{t.Error("Obj not created")}
 	fmt.Println("---------------------------------------------------")
 
-	//os.Remove(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/alvarocontainer1obj1/2/NEW0")
-	//os.Remove(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/alvarocontainer1obj1/1/NEW1")
-	//fmt.Println("SHARDS REMOVED.")
+	os.Remove(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/alvarocontainer1obj1/2/NEW1")
+	os.Remove(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/alvarocontainer1obj1/1/NEW0")
+	fmt.Println("SHARDS REMOVED.")
 
 
-	//fileReplicationCorrect=CheckFileReplication("Account","alvaro",3)
-	//if fileReplicationCorrect==false{
-	//	t.Error("file replication not correct")
-	//}
-	//fmt.Println(fileReplicationCorrect)
+	fileReplicationCorrect=CheckFileReplication("Account","alvaro",3)
+	if fileReplicationCorrect==false{
+		t.Error("file replication not correct")
+	}
+	fmt.Println(fileReplicationCorrect)
 	fmt.Println("---------------------------------------------------")
 
 
@@ -335,7 +335,7 @@ func TestCreateAccountAPI(t *testing.T) {
 	}
 	fmt.Println("---------------------------------------------------")
 
-
+*/
 	if cmdOut, err = exec.Command(path+"/shellScriptsTests/curlGetAccSuccess.sh").Output(); err != nil {
 		fmt.Fprintln(os.Stderr, "There was an error running command: ", err)
 		os.Exit(1)
@@ -415,8 +415,6 @@ func TestCreateAccountAPI(t *testing.T) {
 	}
 
 
-
-*/
 	time.AfterFunc(600 * time.Second, func(){
 		if err:= peer1arun.Shutdown(nil); err!=nil{
 			panic(err)

@@ -21,8 +21,8 @@ import (
 	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
 )
 
-//const fileChunk = 1*(1<<10) // 1 KB
-const fileChunk = 8*(1<<20) // 8 MB
+const fileChunk = 1*(1<<10) // 1 KB
+//const fileChunk = 4*(1<<20) // 4 MB
 const parityShards = 2
 
 type msg struct {
@@ -51,28 +51,19 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 	reader := strings.NewReader(requestJson)
 	trackerURL := "http://" + conf.TrackerAddr + "/GetNodesForKey"
 	request, err := http.NewRequest("GET", trackerURL, reader)
-	if err != nil {
-		fmt.Println("putObjProxy: error creating request: ", err.Error())
-		putOK <- false
-		return
-	}
+	CheckSimpleErr(err, putOK, true)
+
 	res, err := http.DefaultClient.Do(request)
-	if err != nil {
-		fmt.Println("putObjProxy: error sending request: ", err.Error())
-		putOK <- false
-		return
-	}
+	CheckSimpleErr(err, putOK, true)
+
 	if res.StatusCode==http.StatusBadRequest{
 		fmt.Println("PutObjProxy: ",res.StatusCode)
 		putOK <- false
 		return
 	}
 	body, err := ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
-	if err != nil {
-		fmt.Println(err)
-		putOK <- false
-		return
-	}
+	CheckSimpleErr(err, putOK, true)
+
 	if err := res.Body.Close(); err != nil {
 		fmt.Println(err)
 		putOK <- false
@@ -95,19 +86,11 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 	go func() {
 		// save buffer to object
 		err = json.NewEncoder(w).Encode(acc)
-		if err != nil {
-			fmt.Println("Error encoding to pipe ", err.Error())
-			putOK <- false
-			return
-		}
+		CheckSimpleErr(err, putOK, true)
 		defer w.Close()                        // close pipe //when go routine finishes
 	}()
 	res, err = http.Post("http://" + nodeList[currentPeer][currentPeerAddr] + "/checkAccCont", "application/json", r)
-	if err != nil {
-		fmt.Println("Error sending http GET ", err.Error())
-		putOK <- false
-		return
-	}
+	CheckSimpleErr(err, putOK, true)
 	if res.StatusCode == http.StatusBadRequest{
 		fmt.Println("Error bad request")
 		putOK <- false
@@ -121,23 +104,13 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 	reader = strings.NewReader(requestJson)
 	trackerURL = "http://" + trackerAddr + "/GetNodes"
 	request, err = http.NewRequest("GET", trackerURL, reader)
-	if err != nil {
-		fmt.Println("Put: error creating request: ", err.Error())
-		putOK <- false
-		return
-	}
+	CheckSimpleErr(err, putOK, true)
 	res, err = http.DefaultClient.Do(request)
-	if err != nil {
-		fmt.Println("Put: error sending request: ", err.Error())
-		putOK <- false
-		return
-	}
+
+	CheckSimpleErr(err, putOK, true)
 	body, err = ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
-	if err != nil {
-		fmt.Println(err)
-		putOK <- false
-		return
-	}
+	CheckSimpleErr(err, putOK, true)
+
 	if err := res.Body.Close(); err != nil {
 		fmt.Println(err)
 		putOK <- false
@@ -156,11 +129,8 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 		return
 	}
 
-	if err != nil {
-		fmt.Println("Put: error receiving response: ", err.Error())
-		putOK <- false
-		return
-	}
+	CheckSimpleErr(err, putOK, true)
+
 	var currentPart = 0
 	var currentNum = 0
 	var currentAdr = 0
@@ -206,9 +176,7 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 	totalPartsNum, fName, size = EncodeFileAPI(filePath, fileChunk, parityShards, putOK)
 	fmt.Println("EncodeFileApi Success!")
 
-	if PrepareNodes(nodeList, fullName, currentNum, currentAdr, filePath) {
-		putOK <- false
-	}
+	PrepareNodes(nodeList, fullName, currentNum, currentAdr, filePath)
 
 	currentNum = 0
 
@@ -223,9 +191,7 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 		fileShardPath := conf.LocalDirectory + fName + "/" + strconv.Itoa(currentPart)
 		//fileShardPath := "/root/Desktop/empty/go/src/davizzard/ErasureCodes/src/goObjStore/src/NEW" + strconv.Itoa(currentPart)
 
-		if SendFileToNodes(fileShardPath, nodeList, fullName, currentNum, currentAdr, currentPart, &wg, filePath) {
-			putOK <- false
-		}
+		SendFileToNodes(fileShardPath, nodeList, fullName, currentNum, currentAdr, currentPart, &wg, filePath)
 
 		currentPart++
 		currentNum = (currentNum + 1) % len(nodeList)
@@ -245,29 +211,19 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 	go func() {
 		// save buffer to object
 		err = json.NewEncoder(w).Encode(acc)
-		if err != nil {
-			fmt.Println("Error encoding to pipe ", err.Error())
-			putOK <- false
-			return
-		}
+		CheckSimpleErr(err, putOK, true)
 		defer w.Close()                        // close pipe when go routine finishes
 	}()
 	resp, err := http.Post("http://" + nodeList[currentPeer][currentPeerAddr] + "/addObjToCont", "application/json", r)
-	if err != nil {
-		fmt.Println("Error sending http POST ", err.Error())
-		putOK <- false
-		return
+	CheckSimpleErr(err, putOK, true)
 
-	}
 	if resp.StatusCode != http.StatusOK {
 		putOK <- false
 		return
 	}
 
 	err = os.RemoveAll(conf.LocalDirectory + "/" + fName)
-	if err != nil {
-		fmt.Println("error removing path and subDirs")
-	}
+	CheckSimpleErr(err, nil, false)
 
 	putOK <- true
 
@@ -276,8 +232,7 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 
 
 
-func PrepareNodes(nodeList [][]string, fullName string, currentNum int, address int, filePath string) (bool) {
-	var exitStatus = false
+func PrepareNodes(nodeList [][]string, fullName string, currentNum int, address int, filePath string) {
 	// Prepare nodes for content
 	for currentNum < len(nodeList) {
 		rpipe, wpipe := io.Pipe()
@@ -285,41 +240,26 @@ func PrepareNodes(nodeList [][]string, fullName string, currentNum int, address 
 		go func() {
 			// save buffer to object
 			err := json.NewEncoder(wpipe).Encode(mHash)
-			if err != nil {
-				fmt.Println("Error encoding to pipe ", err.Error())
-				if filePath != "" {
-					os.Remove(filePath)
-				}
-				exitStatus = true
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 			defer wpipe.Close()                     // close pipe when go routine finishes
 		}()
 
 		_, err := http.Post("http://" + nodeList[currentNum][address] + "/prepSN", "application/json", rpipe)
-		if err != nil {
-			fmt.Println("to prepSN, Error sending http POST ", err.Error())
-			if filePath != "" {
-				os.Remove(filePath)
-			}
-			return true
-		}
+		CheckSimpleErr(err, nil, true)
 		currentNum++
 	}
-	return exitStatus
 }
 
 
-func SendFileToNodes(fileShardPath string, nodeList [][]string, fullName string, nodeNum int, address int, currentPart int, wg *sync.WaitGroup, filePath string) (bool) {
+func SendFileToNodes(fileShardPath string, nodeList [][]string, fullName string, nodeNum int, address int, currentPart int, wg *sync.WaitGroup, filePath string) {
 	var partSize int
 	var partBuffer []byte
-	var exitStatus = false
 
 	fileShard, err := os.Open(fileShardPath)
-	CheckErr(err)
+	CheckSimpleErr(err, nil, true)
 
 	fileShardInfo, err := fileShard.Stat()
-	CheckErr(err)
+	CheckSimpleErr(err, nil, true)
 
 	text := strconv.FormatInt(fileShardInfo.Size(), 10) // size
 	partSize, _ = strconv.Atoi(text)
@@ -327,7 +267,7 @@ func SendFileToNodes(fileShardPath string, nodeList [][]string, fullName string,
 	partBuffer = make([]byte, partSize)
 	_, err = fileShard.Read(partBuffer)
 
-	CheckErr(err)
+	CheckSimpleErr(err, nil, true)
 	m := msg{NodeList:nodeList, Num:len(nodeList), Hash:fullName, Text:partBuffer, CurrentNode:nodeNum, Name: currentPart}
 	go func(m2 msg, url string) {
 		httpVar.SendReady <- 1
@@ -335,38 +275,17 @@ func SendFileToNodes(fileShardPath string, nodeList [][]string, fullName string,
 		go func() {
 			// save buffer to object
 			err := json.NewEncoder(w).Encode(m2)
-			if err != nil {
-				fmt.Println("Error encoding to pipe ", err.Error())
-				if filePath != "" {
-					os.Remove(filePath)
-				}
-				fileShard.Close()
-				exitStatus = true
-				return
-			}
+			CheckComplexErr(err, nil, filePath, *fileShard, true)
 			defer w.Close()                 // Close pipe //when go routine finishes
 		}()
 
 		_, err := http.Post(url, "application/json", r)
-		if err != nil {
-			fmt.Println("Error sending http POST ", err.Error())
-			os.Remove(filePath)
-			fileShard.Close()
-			exitStatus = true
-			return
-		}
+		CheckComplexErr(err, nil, filePath, *fileShard, true)
 		defer wg.Done()
 		<-httpVar.SendReady
 	}(m, "http://" + nodeList[nodeNum][address] + "/SNPutObj")
 
 	fileShard.Close()
-
-	return exitStatus
-	//wg.Wait()
-		//os.Remove(fileShardPath)
-	//wg.Wait()
-	//os.Remove(filePath)
-	//file.Close()
 
 }
 
@@ -378,18 +297,12 @@ returns the computed hash
 */
 func md5sum(filePath string) string{
 	file, err:=os.Open(filePath)
-	if err != nil {
-		fmt.Println(err)
-		return ""
-	}
+	CheckSimpleErr(err, nil, false)
 	defer file.Close()
 
 	hash := md5.New()
 	_, err = io.Copy(hash,file)
-	if err != nil {
-		fmt.Println(err)
-		return ""
-	}
+	CheckSimpleErr(err, nil, false)
 	mainFileHash:=hex.EncodeToString(hash.Sum(nil))
 	return mainFileHash
 }
@@ -416,24 +329,14 @@ func GetObjProxy(fullName string, proxyAddr []string, trackerAddr string, getOK 
 	reader := strings.NewReader(requestJson)
 	trackerURL:="http://"+trackerAddr+"/GetNodesForKey"
 	request, err := http.NewRequest("GET", trackerURL, reader)
-	if err != nil {
-		fmt.Println("GetObjProxy: error creating request: ",err.Error())
-		getOK <- false
-		return
+	CheckSimpleErr(err, getOK, true)
 
-	}
 	res, err := http.DefaultClient.Do(request)
-	if err != nil {
-		fmt.Println("GetObjProxy: error sending request: ",err.Error())
-		getOK <- false
-		return
-	}
+	CheckSimpleErr(err, getOK, true)
+
 	body, err := ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
-	if err != nil {
-		fmt.Println("GetObjProxy ",err)
-		getOK <- false
-		return
-		}
+	CheckSimpleErr(err, getOK, true)
+
 	if err := res.Body.Close(); err != nil {
 		fmt.Println("GetObjProxy ",err)
 		getOK <- false
@@ -470,28 +373,17 @@ func GetObjProxy(fullName string, proxyAddr []string, trackerAddr string, getOK 
 			defer w.Close()			// close pipe when go routine finishes
 			// save buffer to object
 			err=json.NewEncoder(w).Encode(&k)
-			if err != nil {
-				fmt.Println("GetObjProxy: Error encoding to pipe ", err.Error())
-				getOK <- false
-				return
-
-			}
+			CheckSimpleErr(err, getOK, true)
 		}()
 		url:="http://"+node[currentAddr]+"/SNObjGetChunks"
 		res, err := http.Post(url,"application/json", r )
-		if err != nil {
-			fmt.Println("GetObjProxy: error creating request: ",err.Error())
-			getOK <- false
-			return
+		CheckSimpleErr(err, getOK, true)
 
-		}
 		if err := res.Body.Close(); err != nil {
 			fmt.Println("GetObjProxy: ", err.Error())
 			getOK <- false
 			return
 		}
-
-
 	}
 
 	// Waiting until all chunks are processed
@@ -526,9 +418,8 @@ func ReturnObjProxy(w http.ResponseWriter, r *http.Request) {
 
 	// Read request
 	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		fmt.Println("error reading ", err)
-	}
+	CheckSimpleErr(err, nil, true)
+
 	if err := r.Body.Close(); err != nil {
 		fmt.Println("error body ", err)
 	}
@@ -548,9 +439,7 @@ func ReturnObjProxy(w http.ResponseWriter, r *http.Request) {
 
 	// Save chunk to file
 	err = ioutil.WriteFile(path + "/src/local/" + getmsg.Key + "/" + getmsg.Name, getmsg.Text, 0777)
-	if err != nil {
-		fmt.Println("Peer: error creating/writing file p2p", err.Error())
-	}
+	CheckSimpleErr(err, nil, true)
 
 }
 
@@ -563,27 +452,20 @@ Returns true if both hash are identic and false if not
 */
 func CheckPiecesObj(key string ,fileName string, filePath string, numNodes int, hash string) bool{
 	 file, err := os.Open(filePath)
-	if err != nil {
-		fmt.Println(err.Error())
-		panic(err)
-	}
+	CheckSimpleErr(err, nil, true)
 	defer file.Close()
+
 	fileInfo, _ := file.Stat()
 	text := strconv.FormatInt(fileInfo.Size(), 10)        // size
 	size, _ := strconv.Atoi(text)
-	if err != nil {
-		fmt.Println(err.Error())
-		return false
-	}
+	CheckSimpleErr(err, nil, true)
+
 	totalPartsNumOriginal := int(math.Ceil(float64(size) / float64(fileChunk)))
 
 	// Walking through subfiles directory
 	path:=os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/"+key+"/"
 	subDir, err := ioutil.ReadDir(path)
-	if err != nil {
-		fmt.Println(err)
-		return false
-	}
+	CheckSimpleErr(err, nil, true)
 
 	currentDir:=0
 	for currentDir<numNodes{
@@ -591,10 +473,7 @@ func CheckPiecesObj(key string ,fileName string, filePath string, numNodes int, 
 		// Create new file to fill out
 		_, err = os.Create(os.Getenv("GOPATH") + "/src/github.com/davizzard/ErasureCodes/src/goObjStore/src" + fileName+strconv.Itoa(currentDir))
 		newFile, err := os.OpenFile(os.Getenv("GOPATH") + "/src/github.com/davizzard/ErasureCodes/src/goObjStore/src" + fileName+strconv.Itoa(currentDir), os.O_APPEND | os.O_WRONLY, 0666)
-		if err != nil {
-			fmt.Println(err)
-			return false
-		}
+		CheckSimpleErr(err, nil, true)
 		defer newFile.Close()
 
 		files, err := ioutil.ReadDir(path+subDir[currentDir].Name() )
@@ -610,18 +489,12 @@ func CheckPiecesObj(key string ,fileName string, filePath string, numNodes int, 
 					inOrderCount++
 					//				fmt.Println(file.Name())
 					currentFile, err := os.Open(path + subDir[currentDir].Name() +"/"+ file.Name())
-					if err != nil {
-						fmt.Println(err)
-						return false
-					}
+					CheckSimpleErr(err, nil, true)
 
 					bytesCurrentFile, err := ioutil.ReadFile(path + subDir[currentDir].Name()+"/" +file.Name())
 
 					_, err = newFile.WriteString(string(bytesCurrentFile))
-					if err != nil {
-						fmt.Println(err)
-						return false
-					}
+					CheckSimpleErr(err, nil, true)
 
 					currentFile.Close()
 				}
@@ -649,18 +522,12 @@ func CheckPiecesObj(key string ,fileName string, filePath string, numNodes int, 
 	// Checking Get output (locally)
 	path=os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/local/"+key+"/"
 	files, err := ioutil.ReadDir(path)
-	if err != nil {
-		fmt.Println(err)
-		return false
-	}
+	CheckSimpleErr(err, nil, true)
 
 	// Create new file
 	_, err = os.Create(os.Getenv("GOPATH") + "/src/github.com/davizzard/ErasureCodes/src/goObjStore/src" + fileName)
 	newFile, err := os.OpenFile(os.Getenv("GOPATH") + "/src/github.com/davizzard/ErasureCodes/src/goObjStore/src" + fileName, os.O_APPEND | os.O_WRONLY, 0666)
-	if err != nil {
-		fmt.Println(err)
-		return false
-	}
+	CheckSimpleErr(err, nil, true)
 	defer newFile.Close()
 
 
@@ -675,18 +542,12 @@ func CheckPiecesObj(key string ,fileName string, filePath string, numNodes int, 
 				inOrderCount++
 
 				currentFile, err := os.Open(path + file.Name())
-				if err != nil {
-					fmt.Println(err)
-					return false
-				}
+				CheckSimpleErr(err, nil, true)
 
 				bytesCurrentFile, err := ioutil.ReadFile(path + file.Name())
 
 				_, err = newFile.WriteString(string(bytesCurrentFile))
-				if err != nil {
-					fmt.Println(err)
-					return false
-				}
+				CheckSimpleErr(err, nil, true)
 
 				currentFile.Close()
 			}
@@ -731,28 +592,19 @@ func PutAccountProxy(name string, createOK chan bool){
 	reader := strings.NewReader(requestJson)
 	trackerURL := "http://" + conf.TrackerAddr + "/GetNodes"
 	request, err := http.NewRequest("GET", trackerURL, reader)
-	if err != nil {
-		fmt.Println("Put: error creating request: ", err.Error())
-		createOK <- false
-		return
-	}
+	CheckSimpleErr(err, createOK, true)
+
 	res, err := http.DefaultClient.Do(request)
-	if err != nil {
-		fmt.Println("Put: error sending request: ", err.Error())
-		createOK <- false
-		return
-	}
+	CheckSimpleErr(err, createOK, true)
+
 	if res.StatusCode==http.StatusBadRequest{
 		fmt.Println(" no such name ")
 		createOK <- false
 		return
 	}
 	body, err := ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
-	if err != nil {
-		fmt.Println(err)
-		createOK <- false
-		return
-	}
+	CheckSimpleErr(err, createOK, true)
+
 	if err := res.Body.Close(); err != nil {
 		fmt.Println(err)
 		createOK <- false
@@ -764,11 +616,8 @@ func PutAccountProxy(name string, createOK chan bool){
 		createOK <- false
 		return
 	}
-	if err != nil {
-		fmt.Println("Put: error receiving response: ", err.Error())
-		createOK <- false
-		return
-	}
+	CheckSimpleErr(err, createOK, true)
+
 	if len(nodeList)==0{
 		fmt.Println(" no such name ")
 		createOK <- false
@@ -786,19 +635,13 @@ func PutAccountProxy(name string, createOK chan bool){
 	go func() {
 		// save buffer to object
 		err = json.NewEncoder(w).Encode(acc)
-		if err != nil {
-			fmt.Println("Error encoding to pipe ", err.Error())
-			createOK <- false
-			return
-		}
+		CheckSimpleErr(err, createOK, true)
+
 		defer w.Close()                        // close pipe when go routine finishes
 	}()
 	_, err = http.Post("http://" + nodeList[currentPeer][currentPeerAddr] + "/SNPutAcc", "application/json", r)
-	if err != nil {
-		fmt.Println("Error sending http POST ", err.Error())
-		createOK <- false
-		return
-	}
+	CheckSimpleErr(err, createOK, true)
+
 	createOK <- true
 
 }
@@ -812,23 +655,17 @@ func GetAccountProxy(accountName string) Account{
 	reader := strings.NewReader(requestJson)
 	trackerURL := "http://" + conf.TrackerAddr + "/GetNodesForKey"
 	request, err := http.NewRequest("GET", trackerURL, reader)
-	if err != nil {
-		fmt.Println("putContProxy: error creating request: ", err.Error())
-		return account
-	}
+	CheckSimpleErr(err, nil, true)
+
 	res, err := http.DefaultClient.Do(request)
-	if err != nil {
-		fmt.Println("GetAccountProxy: error sending request: ", err.Error())
-		return account
-	}
+	CheckSimpleErr(err, nil, true)
+
 	if res.StatusCode == http.StatusBadRequest{
 		return account
 	}
 	body, err := ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
-	if err != nil {
-		fmt.Println(err)
-		return account
-	}
+	CheckSimpleErr(err, nil, true)
+
 	if err := res.Body.Close(); err != nil {
 		fmt.Println(err)
 		return account
@@ -846,23 +683,17 @@ func GetAccountProxy(accountName string) Account{
 
 
 	request, err = http.NewRequest("GET", "http://" + nodeList[currentPeer][currentPeerAddr] + "/SNGetAcc", reader)
-	if err != nil {
-		fmt.Println("Error sending http GET ", err.Error())
-		return account
-	}
+	CheckSimpleErr(err, nil, true)
+
 	res, err = http.DefaultClient.Do(request)
-	if err != nil {
-		fmt.Println("GetAccountProxy: error sending request: ", err.Error())
-		return account
-	}
+	CheckSimpleErr(err, nil, true)
+
 	if res.StatusCode == http.StatusBadRequest{
 		return account
 	}
 	body, err = ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
-	if err != nil {
-		fmt.Println(err)
-		return account
-	}
+	CheckSimpleErr(err, nil, true)
+
 	if err := res.Body.Close(); err != nil {
 		fmt.Println(err)
 		return account
@@ -884,17 +715,11 @@ func PutContProxy(account string, container string, createOK chan bool){
 	reader := strings.NewReader(requestJson)
 	trackerURL := "http://" + conf.TrackerAddr + "/GetNodesForKey"
 	request, err := http.NewRequest("GET", trackerURL, reader)
-	if err != nil {
-		fmt.Println("putContProxy: error creating request: ", err.Error())
-		createOK <- false
-		return
-	}
+	CheckSimpleErr(err, createOK, true)
+
 	res, err := http.DefaultClient.Do(request)
-	if err != nil {
-		fmt.Println("putContProxy: error sending request: ", err.Error())
-		createOK <- false
-		return
-	}
+	CheckSimpleErr(err, createOK, true)
+
 	if res.StatusCode == http.StatusBadRequest{
 		createOK <- false
 		return
@@ -925,19 +750,11 @@ func PutContProxy(account string, container string, createOK chan bool){
 	go func() {
 		// save buffer to object
 		err = json.NewEncoder(w).Encode(acc)
-		if err != nil {
-			fmt.Println("Error encoding to pipe ", err.Error())
-			createOK <- false
-			return
-		}
+		CheckSimpleErr(err, createOK, true)
 		defer w.Close()                        // close pipe //when go routine finishes
 	}()
 	_, err = http.Post("http://" + nodeList[currentPeer][currentPeerAddr] + "/SNPutCont", "application/json", r)
-	if err != nil {
-		fmt.Println("Error sending http POST ", err.Error())
-		createOK <- false
-		return
-	}
+	CheckSimpleErr(err, createOK, true)
 
 	createOK <- true
 }
@@ -954,15 +771,11 @@ func GetContProxy(accountName string, containerName string) Container{
 	reader := strings.NewReader(requestJson)
 	trackerURL := "http://" + conf.TrackerAddr + "/GetNodesForKey"
 	request, err := http.NewRequest("GET", trackerURL, reader)
-	if err != nil {
-		fmt.Println("putContProxy: error creating request: ", err.Error())
-		return container
-	}
+	CheckSimpleErr(err, nil, true)
+
 	res, err := http.DefaultClient.Do(request)
-	if err != nil {
-		fmt.Println("GetAccountProxy: error sending request: ", err.Error())
-		return container
-	}
+	CheckSimpleErr(err, nil, true)
+
 	if res.StatusCode == http.StatusBadRequest{
 		return container
 	}
@@ -993,10 +806,8 @@ func GetContProxy(accountName string, containerName string) Container{
 		return container
 	}
 	res, err = http.DefaultClient.Do(request)
-	if err != nil {
-		fmt.Println("GetAccountProxy: error sending request: ", err.Error())
-		return container
-	}
+	CheckSimpleErr(err, nil, true)
+
 	if res.StatusCode == http.StatusBadRequest{
 		return container
 	}
@@ -1057,83 +868,19 @@ func CheckFileReplication(fileType string, name string, replication int) bool{
 }
 
 
-func GatherPieces(key string , totalParts int, parityShards int, nodeList [][]string) bool{
-
-	/*
-	// Checking Get output (locally)
-	path=os.Getenv("GOPATH")+"/src/github.com/alruiz12/goObjStore/src/local/"+key+"/"
-	files, err := ioutil.ReadDir(path)
-	if err != nil {
-		fmt.Println("Readir",err, " ",path)
-		return false
-	}
-
-	// Create new file
-	_, err = os.Create(conf.DownloadsDirectory + key)
-	if err != nil {
-		fmt.Println(" create ",err)
-	}
-	newFile, err := os.OpenFile(conf.DownloadsDirectory + key, os.O_APPEND | os.O_WRONLY, 0666)
-	if err != nil {
-		fmt.Println("GatherPieces",err)
-		return false
-	}
-	defer newFile.Close()
-
-
-	// Trying to fill out the new file using subfiles (in order)
-	var inOrderCount = 0
-	var maxTimes int = 0
-
-	var fileNameOriginal= conf.LocalFileName[:len(conf.LocalFileName)-4]
-	for inOrderCount<totalParts {
-		for _, file := range files {
-			if strings.Compare(file.Name(), fileNameOriginal + strconv.Itoa(inOrderCount)) == 0 {
-				inOrderCount++
-				currentFile, err := os.Open(path + file.Name())
-				if err != nil {
-					fmt.Println(err)
-					return false
-				}
-
-				bytesCurrentFile, err := ioutil.ReadFile(path + file.Name())
-
-				_, err = newFile.WriteString(string(bytesCurrentFile))
-				if err != nil {
-					fmt.Println(err)
-					return false
-				}
-
-				currentFile.Close()
-			}
-
-		}
-		if inOrderCount == 0 {
-			maxTimes++
-		}
-		if maxTimes > 1 {
-			fmt.Println("maxTimes > 1 when looking for ", fileNameOriginal + strconv.Itoa(inOrderCount))
-			return false
-		}
-
-	}
-	*/
-	fmt.Println("GATHER PIECES")
-	// Checking Get output (locally)
+func GatherPieces(key string , totalParts int, parityShards int, nodeList [][]string) bool {
+	var exitStatus = false
+	fmt.Println("Gather Pieces init.")
 	path=os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/local/"+key+"/"
 
-	//os.Remove(path+"NEW0")
-	//os.Remove(path+"NEW18")
-	//fmt.Println("IN PROXY: FILES REMOVED.")
-
-	DecodeFileAPI(path, key, totalParts-parityShards, parityShards, conf.ChunkProxyName, nodeList)
+	if DecodeFileAPI(path, key, totalParts-parityShards, parityShards, conf.ChunkProxyName, nodeList) {
+		exitStatus = true
+	}
 
 	err := os.RemoveAll(path)
-	if err != nil {
-		fmt.Println("error removing path and subDirs")
-		return true
-	}
-	return false
+	CheckSimpleErr(err, nil, false)
+
+	return exitStatus
 }
 
 

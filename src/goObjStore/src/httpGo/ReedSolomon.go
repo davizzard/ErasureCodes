@@ -21,21 +21,15 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 
 	fmt.Println("Opening", fname)
 	f, err := os.Open(fname)
-	CheckErr(err)
+	CheckSimpleErr(err, putOK, true)
 
 	fInfo, err := f.Stat()
-	CheckErr(err)
+	CheckSimpleErr(err, putOK, true)
 
 
 	text := strconv.FormatInt(fInfo.Size(), 10)        // size
-	size, _ := strconv.Atoi(text)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Remove(fname)
-		f.Close()
-		putOK <- false
-		CheckErr(err)
-	}
+	size, err := strconv.Atoi(text)
+	CheckComplexErr(err, putOK, fname, *f, true)
 
 	fmt.Printf("Filechunk size BEFORE: %d bytes.\n", fileChunk)
 
@@ -43,10 +37,6 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 	if (dataShards > 257) {
 		dataShards = 257
 	}
-	//startingDataShards := dataShards
-	//if (startingDataShards > 257) {
-	//	startingDataShards = 257
-	//}
 
 	fmt.Println("Finding the correct amount of Data shards...")
 	for math.Ceil(math.Mod(float64(size), float64(dataShards))) != 0 {
@@ -54,26 +44,14 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 		dataShards--
 		counter++
 	}
-/*
-	if dataShards > 257 {
-		fmt.Println("Too many Data shards. Proceding to divide the file into less shards...")
-		dataShards = startingDataShards-1
-		for (math.Ceil(math.Mod(float64(size), float64(dataShards))) != 0) {
-			fmt.Printf("Iteration nº: %d\n", counter)
-			dataShards--
-			counter++
-		}
-	}
-*/
+
 	fileChunk = int(math.Ceil(float64(size) / float64(dataShards+parityShards)))
 
 	fmt.Printf("Filechunk size AFTER: %d bytes.\n", fileChunk)
 
 	// Create encoding matrix.
-	enc, err := reedsolomon.NewStream(dataShards, parityShards)
-	CheckErr(err)
-
-
+	enc, err := reedsolomon.NewStreamC(dataShards, parityShards, true, true)
+	CheckSimpleErr(err, putOK, true)
 	shards := dataShards + parityShards
 	out := make([]*os.File, shards)
 
@@ -84,10 +62,10 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 	dir = dir + "/"
 	for i := range out {
 		outfn := fmt.Sprintf("%d", i)
-		//outfn := fmt.Sprintf("NEW%d", i)
 		fmt.Println("Creating", outfn)
 		out[i], err = os.Create(filepath.Join(dir, outfn))
-		CheckErr(err)
+		CheckSimpleErr(err, putOK, true)
+
 	}
 
 	// Split into files.
@@ -97,7 +75,7 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 	}
 	// Do the split
 	err = enc.Split(f, data, fInfo.Size())
-	CheckErr(err)
+	CheckSimpleErr(err, putOK, true)
 
 	// Close and re-open the files.
 	input := make([]io.Reader, dataShards)
@@ -105,7 +83,7 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 	for i := range data {
 		out[i].Close()
 		f, err := os.Open(out[i].Name())
-		CheckErr(err)
+		CheckSimpleErr(err, putOK, true)
 		input[i] = f
 		defer f.Close()
 	}
@@ -119,7 +97,7 @@ func EncodeFileAPI(fname string, fileChunk int, parityShards int, putOK chan boo
 
 	// Encode parity
 	err = enc.Encode(input, parity)
-	CheckErr(err)
+	CheckSimpleErr(err, putOK, true)
 	fmt.Printf("File split into %d data + %d parity shards.\n", dataShards, parityShards)
 
 	return shards, file, size
@@ -135,12 +113,12 @@ func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, s
 
 	fmt.Printf("Decoding file... Data Shards: %d. Parity shards: %d\n", dataShards, parityShards)
 	// Create matrix
-	enc, err := reedsolomon.NewStream(dataShards, parityShards)
-	CheckErr(err)
+	enc, err := reedsolomon.NewStreamC(dataShards, parityShards, true, true)
+	CheckSimpleErr(err, nil, true)
 
 	// Open the inputs
 	shards, size, err := openInput(dataShards, parityShards, fname, separator)
-	CheckErr(err)
+	CheckSimpleErr(err, nil, true)
 
 	// Verify the shards
 	ok, err := enc.Verify(shards)
@@ -151,7 +129,7 @@ func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, s
 		fmt.Println("Verification failed. Reconstructing data.")
 
 		shards, size, err = openInput(dataShards, parityShards, fname, separator)
-		CheckErr(err)
+		CheckSimpleErr(err, nil, true)
 		// Create out destination writers
 		out := make([]io.Writer, len(shards))
 		for i := range out {
@@ -159,7 +137,7 @@ func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, s
 				outfn := fmt.Sprintf("%s%s%d", fname, separator, i)
 				fmt.Println("Creating", outfn)
 				out[i], err = os.Create(outfn)
-				CheckErr(err)
+				CheckSimpleErr(err, nil, true)
 				missingShards = append(missingShards, i)
 			}
 		}
@@ -180,11 +158,10 @@ func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, s
 			nodeNum := j % len(nodeList)
 			fileShardPath := fname + separator + strconv.Itoa(j)
 
-			if SendFileToNodes(fileShardPath, nodeList, key, nodeNum, 0, j, &wg, "") {
-				exitStatus = true
-			} else {
-				fmt.Printf("Data shard %d reconstructed and succesfully sent to Storage Node with ID %d.\n", j, nodeNum)
-			}
+			SendFileToNodes(fileShardPath, nodeList, key, nodeNum, 0, j, &wg, "")
+
+			fmt.Printf("Data shard %d reconstructed. Sending data to Storage Node with ID %d.\n", j, nodeNum)
+
 		}
 
 		wg.Wait()
@@ -193,7 +170,7 @@ func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, s
 		for i := range out {
 			if out[i] != nil {
 				err := out[i].(*os.File).Close()
-				CheckErr(err)
+				CheckSimpleErr(err, nil, true)
 			}
 		}
 		shards, size, err = openInput(dataShards, parityShards, fname, separator)
@@ -203,7 +180,7 @@ func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, s
 			exitStatus = true
 			return exitStatus
 		}
-		CheckErr(err)
+		CheckSimpleErr(err, nil, true)
 
 	}
 
@@ -212,13 +189,13 @@ func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, s
 
 	fmt.Println("Writing data to", outfn)
 	f, err := os.Create(outfn)
-	CheckErr(err)
+	CheckSimpleErr(err, nil, true)
 
 	shards, size, err = openInput(dataShards, parityShards, fname, separator)
-	CheckErr(err)
+	CheckSimpleErr(err, nil, true)
 
 	err = enc.Join(f, shards, int64(dataShards)*size)
-	CheckErr(err)
+	CheckSimpleErr(err, nil, true)
 
 	return exitStatus
 }
@@ -239,7 +216,7 @@ func openInput(dataShards, parShards int, fname string, separator string) (r []i
 			shards[i] = f
 		}
 		stat, err := f.Stat()
-		CheckErr(err)
+		CheckSimpleErr(err, nil, true)
 		if stat.Size() > 0 {
 			size = stat.Size()
 		} else {
@@ -250,11 +227,29 @@ func openInput(dataShards, parShards int, fname string, separator string) (r []i
 }
 
 
-
-func CheckErr(err error) {
+func CheckSimpleErr(err error, channel chan bool, exit bool) {
 	if err != nil {
 		fmt.Println("Error: %s", err.Error())
-		os.Exit(2)
+		channel <- false
+		if exit {
+			os.Exit(2)
+		}
+	}
+}
+
+func CheckComplexErr(err error, channel chan bool, fileToRemove string, fileToClose os.File, exit bool) {
+	if err != nil {
+		fmt.Println("Error: %s", err.Error())
+		if channel != nil {
+			channel <- false
+		}
+		if fileToRemove != "" {
+			os.Remove(fileToRemove)
+		}
+		fileToClose.Close()
+		if exit {
+			os.Exit(2)
+		}
 	}
 }
 
