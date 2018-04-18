@@ -111,13 +111,7 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 	err = json.Unmarshal(body, &nodeList)
 	CheckSimpleErr(err, putOK, true)
 
-	if len(nodeList)==0{
-		fmt.Println(" no such name ")
-		putOK <- false
-		return
-	}
-
-	CheckSimpleErr(err, putOK, true)
+	CheckLengthErr(len(nodeList), " no such name ", putOK, true)
 
 	var currentPart = 0
 	var currentNum = 0
@@ -587,13 +581,7 @@ func PutAccountProxy(name string, createOK chan bool){
 	err = json.Unmarshal(body, &nodeList)
 	CheckSimpleErr(err, createOK, true)
 
-	if len(nodeList)==0{
-		fmt.Println(" no such name ")
-		createOK <- false
-		return
-	} else {
-		fmt.Println("len ",len(nodeList))
-	}
+	CheckLengthErr(len(nodeList), " no such name ", createOK, true)
 
 	// Randomly choose one Storage Node and one of its addresses to put account
 	currentPeer:= rand.Intn(len(nodeList))

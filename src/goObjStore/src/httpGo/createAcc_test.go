@@ -144,11 +144,22 @@ func TestCreateAccountAPI(t *testing.T) {
 		err    error
 	)
 
-		if cmdOut, err = exec.Command(path+"/shellScriptsTests/curlCreateAccSuccess.sh").Output(); err != nil {
+		if cmdOut, err = exec.Command(path+"/shellScriptsTests/curlCreateAccFail.sh").Output(); err != nil {
 			fmt.Fprintln(os.Stderr, "There was an error running command: ", err)
 			os.Exit(1)
 		}
 		resp := string(cmdOut)
+		fmt.Println("curl response ", resp)
+		if strings.Compare(resp,"201")==0 {
+			fmt.Println(resp+ " failed as expected")
+		}else{t.Error("Expected Failure")}
+		fmt.Println("---------------------------------------------------")
+
+		if cmdOut, err = exec.Command(path+"/shellScriptsTests/curlCreateAccSuccess.sh").Output(); err != nil {
+			fmt.Fprintln(os.Stderr, "There was an error running command: ", err)
+			os.Exit(1)
+		}
+		resp = string(cmdOut)
 		fmt.Println("curl response ", resp)
 		if strings.Compare(resp,"201")==0 {
 			fmt.Println(resp+ " created")

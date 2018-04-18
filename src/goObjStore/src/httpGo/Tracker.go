@@ -72,9 +72,8 @@ func GetNodes(w http.ResponseWriter, r *http.Request){
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(nodeList); err != nil {
-		fmt.Println("GetNodes: error encoding response: ",err.Error())
-	}
+	err = json.NewEncoder(w).Encode(nodeList)
+	CheckJsonErr(err, nil, w)
 }
 
 func chooseNodes(num int)[][]string{
@@ -125,6 +124,7 @@ func chooseBusyNodes(num int, busies [][]string, response [][]string) [][]string
 }
 
 func GetNodesForKey(w http.ResponseWriter, r *http.Request){
+	var checkErr, checkErr2 bool
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	CheckSimpleErr(err, nil, true)
 	err = r.Body.Close()
@@ -137,25 +137,19 @@ func GetNodesForKey(w http.ResponseWriter, r *http.Request){
 	var nodeList [][]string
 	if strings.Compare(request.Type, "object") == 0  {
 		nodeList = httpVar.MapKeyNodes[request.ID]
-		if len(nodeList)==0{
-			fmt.Println("ID ",request.ID, " has length 0")
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
+		checkErr = CheckLengthErr(len(nodeList), "ID has length 0", nil, false)
 	}else if strings.Compare(request.Type, "account" )== 0 {
 		nodeList = httpVar.MapAccNodes[request.ID]
-		if len(nodeList)==0{
-			fmt.Println("ID ",request.ID, " has length 0")
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
+		checkErr2 = CheckLengthErr(len(nodeList), "ID has length 0", nil, false)
 	}
-
+	if checkErr || checkErr2 {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(nodeList); err != nil {
-		fmt.Println("GetNodesForKey: error encoding response: ",err.Error())
-	}
+	err = json.NewEncoder(w).Encode(nodeList)
+	CheckJsonErr(err, nil, w)
 }
 
 

@@ -53,3 +53,16 @@ func CheckJsonErr(err error, channel chan bool, w http.ResponseWriter) bool {
 		return false
 	}
 }
+
+func CheckLengthErr(lenght int, msg string, channel chan bool, exit bool) bool {
+	if lenght == 0 {
+		fmt.Println("Error: ", msg)
+		channel <- false
+		if exit {
+			os.Exit(2)
+		}
+		return true
+	} else {
+		return false
+	}
+}

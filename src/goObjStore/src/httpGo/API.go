@@ -196,9 +196,8 @@ func GetContAPI(w http.ResponseWriter, r *http.Request){
 			if strings.Compare( container.Name,results[1] ) == 0 {
 				fmt.Println("get success ")
 				w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-				if err := json.NewEncoder(w).Encode(container); err != nil {
-					fmt.Println("GetNodes: error encoding response: ",err.Error())
-				}
+				err := json.NewEncoder(w).Encode(container)
+				CheckJsonErr(err, nil, w)
 			} else {
 				fmt.Println("get fail",container.Name," /",results[1] )
 				w.WriteHeader(http.StatusBadRequest)

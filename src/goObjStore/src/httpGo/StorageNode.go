@@ -569,12 +569,6 @@ func addObjToCont(w http.ResponseWriter, r *http.Request){
 
 	httpVar.AccFileMutex.Unlock()
 
-
-	if err != nil {
-		fmt.Println("addObjToCont: error Marshalling")
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
 	w.WriteHeader(http.StatusOK)
 
 

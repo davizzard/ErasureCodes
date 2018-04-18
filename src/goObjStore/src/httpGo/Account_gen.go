@@ -14,15 +14,11 @@ func (z *Account) DecodeMsg(dc *msgp.Reader) (err error) {
 	_ = field
 	var zb0001 uint32
 	zb0001, err = dc.ReadMapHeader()
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	for zb0001 > 0 {
 		zb0001--
 		field, err = dc.ReadMapKeyPtr()
-		if err != nil {
-			return
-		}
+		CheckSimpleErr(err, nil, true)
 		switch msgp.UnsafeString(field) {
 		case "name":
 			z.Name, err = dc.ReadString()
@@ -50,9 +46,7 @@ func (z *Account) DecodeMsg(dc *msgp.Reader) (err error) {
 			}
 		default:
 			err = dc.Skip()
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		}
 	}
 	return
@@ -104,9 +98,7 @@ func (z *Account) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	_ = field
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
