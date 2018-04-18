@@ -47,33 +47,16 @@ Sends new json encoded node list back to the sender
 func GetNodes(w http.ResponseWriter, r *http.Request){
 	var nodeNum NodeNum
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-	if err != nil {
-		panic(err)
-	}
-	if err := r.Body.Close(); err != nil {
-		panic(err)
-	}
+	CheckSimpleErr(err, nil, true)
+	err = r.Body.Close()
+	CheckSimpleErr(err, nil, true)
 
-	if err := json.Unmarshal(body, &nodeNum); err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			fmt.Println("GetNodes: error unprocessable entity: ",err.Error())
-			return
-		}
-		return
-	}
+	err = json.Unmarshal(body, &nodeNum)
+	CheckJsonErr(err, nil, w)
+
 	num, err := strconv.Atoi(nodeNum.Quantity)
-	if err != nil {
-		fmt.Println("GetNodes: error converting string to int response: ",err.Error())
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			fmt.Println("GetNodes: error unprocessable entity: ",err.Error())
-			return
-		}
-		return
-	}
+	CheckJsonErr(err, nil, w)
+
 	nodeList:=chooseNodes(num)
 	// registering nodeList to type and ID can be: object, container or account
 	if strings.Compare(nodeNum.Type,"object")==0 {
@@ -143,32 +126,14 @@ func chooseBusyNodes(num int, busies [][]string, response [][]string) [][]string
 
 func GetNodesForKey(w http.ResponseWriter, r *http.Request){
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-	if err != nil {
-		panic(err)
-	}
-	if err := r.Body.Close(); err != nil {
-		panic(err)
-	}
+	CheckSimpleErr(err, nil, true)
+	err = r.Body.Close()
+	CheckSimpleErr(err, nil, true)
+
 	var request jsonKey
-	if err := json.Unmarshal(body, &request); err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			fmt.Println("GetNodesForKey: error unprocessable entity: ",err.Error())
-			return
-		}
-		return
-	}
-	if err != nil {
-		fmt.Println("GetNodesForKey: error converting string to int response: ",err.Error())
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			fmt.Println("GetNodesForKey: error unprocessable entity: ",err.Error())
-			return
-		}
-		return
-	}
+	err = json.Unmarshal(body, &request)
+	CheckJsonErr(err, nil, w)
+
 	var nodeList [][]string
 	if strings.Compare(request.Type, "object") == 0  {
 		nodeList = httpVar.MapKeyNodes[request.ID]
