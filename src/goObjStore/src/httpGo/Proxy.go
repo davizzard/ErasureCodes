@@ -63,11 +63,9 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 	body, err := ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
 	CheckSimpleErr(err, putOK, true)
 
-	if err := res.Body.Close(); err != nil {
-		fmt.Println(err)
-		putOK <- false
-		return
-	}
+	err = res.Body.Close()
+	CheckSimpleErr(err, putOK, true)
+
 	err = json.Unmarshal(body, &nodeList)
 	CheckSimpleErr(err, putOK, true)
 
@@ -107,11 +105,9 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 	body, err = ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
 	CheckSimpleErr(err, putOK, true)
 
-	if err := res.Body.Close(); err != nil {
-		fmt.Println(err)
-		putOK <- false
-		return
-	}
+	err = res.Body.Close()
+	CheckSimpleErr(err, putOK, true)
+
 	err = json.Unmarshal(body, &nodeList)
 	CheckSimpleErr(err, putOK, true)
 
@@ -329,11 +325,9 @@ func GetObjProxy(fullName string, proxyAddr []string, trackerAddr string, getOK 
 	body, err := ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
 	CheckSimpleErr(err, getOK, true)
 
-	if err := res.Body.Close(); err != nil {
-		fmt.Println("GetObjProxy ",err)
-		getOK <- false
-		return
-	}
+	err = res.Body.Close()
+	CheckSimpleErr(err, getOK, true)
+
 	var nodeList [][]string
 	err = json.Unmarshal(body, &nodeList)
 	CheckSimpleErr(err, getOK, true)
@@ -368,11 +362,9 @@ func GetObjProxy(fullName string, proxyAddr []string, trackerAddr string, getOK 
 		res, err := http.Post(url,"application/json", r )
 		CheckSimpleErr(err, getOK, true)
 
-		if err := res.Body.Close(); err != nil {
-			fmt.Println("GetObjProxy: ", err.Error())
-			getOK <- false
-			return
-		}
+		err = res.Body.Close()
+		CheckSimpleErr(err, getOK, true)
+
 	}
 
 	// Waiting until all chunks are processed
@@ -409,9 +401,9 @@ func ReturnObjProxy(w http.ResponseWriter, r *http.Request) {
 	body, err := ioutil.ReadAll(r.Body)
 	CheckSimpleErr(err, nil, true)
 
-	if err := r.Body.Close(); err != nil {
-		fmt.Println("error body ", err)
-	}
+	err = r.Body.Close()
+	CheckSimpleErr(err, nil, true)
+
 	err = json.Unmarshal(body, &getmsg)
 	CheckJsonErr(err, nil, w)
 
@@ -589,11 +581,9 @@ func PutAccountProxy(name string, createOK chan bool){
 	body, err := ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
 	CheckSimpleErr(err, createOK, true)
 
-	if err := res.Body.Close(); err != nil {
-		fmt.Println(err)
-		createOK <- false
-		return
-	}
+	err = res.Body.Close()
+	CheckSimpleErr(err, createOK, true)
+
 	err = json.Unmarshal(body, &nodeList)
 	CheckSimpleErr(err, createOK, true)
 
@@ -645,10 +635,9 @@ func GetAccountProxy(accountName string) Account{
 	body, err := ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
 	CheckSimpleErr(err, nil, true)
 
-	if err := res.Body.Close(); err != nil {
-		fmt.Println(err)
-		return account
-	}
+	err = res.Body.Close()
+	CheckSimpleErr(err, nil, true)
+
 	err = json.Unmarshal(body, &nodeList)
 	CheckSimpleErr(err, nil, true)
 
@@ -671,10 +660,8 @@ func GetAccountProxy(accountName string) Account{
 	body, err = ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
 	CheckSimpleErr(err, nil, true)
 
-	if err := res.Body.Close(); err != nil {
-		fmt.Println(err)
-		return account
-	}
+	err = res.Body.Close()
+	CheckSimpleErr(err, nil, true)
 
 	err = json.Unmarshal(body, &account)
 	CheckSimpleErr(err, nil, true)
@@ -703,11 +690,9 @@ func PutContProxy(account string, container string, createOK chan bool){
 	body, err := ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
 	CheckSimpleErr(err, createOK, true)
 
-	if err := res.Body.Close(); err != nil {
-		fmt.Println(err)
-		createOK <- false
-		return
-	}
+	err = res.Body.Close()
+	CheckSimpleErr(err, createOK, true)
+
 	err = json.Unmarshal(body, &nodeList)
 	CheckSimpleErr(err, nil, true)
 
@@ -752,10 +737,9 @@ func GetContProxy(accountName string, containerName string) Container{
 	body, err := ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
 	CheckSimpleErr(err, nil, true)
 
-	if err := res.Body.Close(); err != nil {
-		fmt.Println(err)
-		return container
-	}
+	err = res.Body.Close()
+	CheckSimpleErr(err, nil, true)
+
 	err = json.Unmarshal(body, &nodeList)
 	CheckSimpleErr(err, nil, true)
 
@@ -778,10 +762,8 @@ func GetContProxy(accountName string, containerName string) Container{
 	body, err = ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
 	CheckSimpleErr(err, nil, true)
 
-	if err := res.Body.Close(); err != nil {
-		fmt.Println(err)
-		return container
-	}
+	err = res.Body.Close()
+	CheckSimpleErr(err, nil, true)
 
 	err = json.Unmarshal(body, &account)
 	CheckSimpleErr(err, nil, true)
