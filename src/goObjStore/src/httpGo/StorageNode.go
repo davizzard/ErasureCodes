@@ -4,7 +4,6 @@ import(
 	"fmt"
 	"io/ioutil"
 	"io"
-	"log"
 	"os"
 	"encoding/json"
 	"github.com/davizzard/ErasureCodes/src/goObjStore/src/httpVar"
@@ -136,10 +135,10 @@ func SNPutObj(w http.ResponseWriter, r *http.Request){
 
 
 
-
+/*
 // Listen to other peers
 func SNPutObjP2PRequest(w http.ResponseWriter, r *http.Request) {
-	/*
+
 	var path = os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore"
 	var chunk msg
 	// Get peer ID
@@ -179,8 +178,9 @@ func SNPutObjP2PRequest(w http.ResponseWriter, r *http.Request) {
 		httpVar.DirMutex.Unlock()
 
 	}
-	*/
+
 }
+*/
 
 func SNObjGetChunks(w http.ResponseWriter, r *http.Request){
 	fmt.Println("GetChunks init.")
@@ -329,34 +329,27 @@ func SNPutAcc(w http.ResponseWriter, r *http.Request){
 // Listen to other peers
 func SNPutAccP2PRequest(w http.ResponseWriter, r *http.Request) {
 	var marshalledAcc MarshalledAcc
+	var checkErr, checkErr2, checkErr3, checkErr4 bool
 	// Get peer ID
 	var peerID int = int(r.Host[len(r.Host) - 1] - '0')
 
 	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		fmt.Println("error reading ", err)
-		w.WriteHeader(http.StatusBadRequest)
-	}
-	if err := r.Body.Close(); err != nil {
-		fmt.Println("error body ", err)
-		w.WriteHeader(http.StatusBadRequest)
-	}
-	if err := json.Unmarshal(body, &marshalledAcc); err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		log.Println(err)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			fmt.Println("error unmarshalling ", err)
-		}
-		w.WriteHeader(http.StatusBadRequest)
-	}
+	checkErr = CheckSimpleErr(err, nil, false)
+
+	err = r.Body.Close()
+	checkErr2 = CheckSimpleErr(err, nil, false)
+
+	err = json.Unmarshal(body, &marshalledAcc)
+	checkErr3 = CheckJsonErr(err, nil, w)
+
 	// check Accounts map for new Account
 	httpVar.AccFileMutexP2P.Lock()
 	err = ioutil.WriteFile(path+"/src/Account"+marshalledAcc.Name+strconv.Itoa(peerID),marshalledAcc.Bytes,0777)
 	httpVar.AccFileMutexP2P.Unlock()
 
-	if err != nil {
-		fmt.Println("SNPutAccP2PRequest: ",err)
+	checkErr4 = CheckSimpleErr(err, nil, false)
+
+	if checkErr || checkErr2 || checkErr3 || checkErr4 {
 		w.WriteHeader(http.StatusBadRequest)
 	}
 	w.WriteHeader(http.StatusCreated)

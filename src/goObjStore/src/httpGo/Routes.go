@@ -33,7 +33,7 @@ func MyNewRouter() *mux.Router {
 	router.HandleFunc("/SNPutObj", SNPutObj)
 	//router.HandleFunc("/SNodeListenNoP2P", SNodeListenNoP2P)
 
-	router.HandleFunc("/SNPutObjP2PRequest", SNPutObjP2PRequest)
+	//router.HandleFunc("/SNPutObjP2PRequest", SNPutObjP2PRequest)
 	router.HandleFunc("/ReturnObjProxy", ReturnObjProxy)
 	router.HandleFunc("/prepSN", prepSN)
 	router.HandleFunc("/putObj", PutObjAPI)	// Todo: account/container/object

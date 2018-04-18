@@ -229,47 +229,6 @@ func openInput(dataShards, parShards int, fname string, separator string) (r []i
 }
 
 
-func CheckSimpleErr(err error, channel chan bool, exit bool) {
-	if err != nil {
-		fmt.Println("Error: %s", err.Error())
-		channel <- false
-		if exit {
-			os.Exit(2)
-		}
-	}
-}
-
-func CheckComplexErr(err error, channel chan bool, fileToRemove string, fileToClose os.File, exit bool) {
-	if err != nil {
-		fmt.Println("Error: %s", err.Error())
-		if channel != nil {
-			channel <- false
-		}
-		if fileToRemove != "" {
-			os.Remove(fileToRemove)
-		}
-		fileToClose.Close()
-		if exit {
-			os.Exit(2)
-		}
-	}
-}
-
-func CheckJsonErr(err error, channel chan bool, w http.ResponseWriter) bool {
-	if err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		fmt.Println("Error: %s", err.Error())
-		err := json.NewEncoder(w).Encode(err)
-		CheckSimpleErr(err, channel, false)
-		channel <- false
-		return true
-	} else {
-		return false
-	}
-}
-
-
 func elapsed(what string) func() {
 	start := time.Now()
 	return func() {
