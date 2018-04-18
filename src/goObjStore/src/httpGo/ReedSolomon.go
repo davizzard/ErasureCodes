@@ -11,8 +11,6 @@ import (
 	"time"
 	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
 	"sync"
-	"net/http"
-	"encoding/json"
 )
 
 
