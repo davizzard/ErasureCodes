@@ -21,20 +21,13 @@ func prepSN(w http.ResponseWriter, r *http.Request){
 	var hashRecived putObjMSg
 	var nodeID int =int(r.Host[len(r.Host)-1]-'0')
 	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		fmt.Println("error reading ",err)
-	}
-	if err := r.Body.Close(); err != nil {
-		fmt.Println("error body ",err)
-	}
-	if err := json.Unmarshal(body, &hashRecived); err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		log.Println(err)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			fmt.Println("error unmarshalling ",err)
-		}
-	}
+	CheckSimpleErr(err, nil, false)
+
+	err = r.Body.Close()
+	CheckSimpleErr(err, nil, false)
+
+	err = json.Unmarshal(body, &hashRecived)
+	CheckJsonErr(err, nil, w)
 
 	httpVar.DirMutex.Lock()
 	// if data directory doesn't exist, create it
@@ -53,15 +46,11 @@ func prepSN(w http.ResponseWriter, r *http.Request){
 	_, err = os.Stat(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/"+hashRecived.ID +"/"+strconv.Itoa( nodeID))
 	if err != nil {
 		err2:=os.Mkdir(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/"+hashRecived.ID +"/"+strconv.Itoa( nodeID),0777)
-		if err2!=nil{
-			fmt.Println("StorageNode error making dir", err.Error())
-		}
+		CheckSimpleErr(err2, nil, false)
 	} else{
 		os.RemoveAll(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/"+hashRecived.ID +"/"+strconv.Itoa( nodeID))
 		err2:=os.Mkdir(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/data/"+hashRecived.ID +"/"+strconv.Itoa( nodeID),0777)
-		if err2!=nil{
-			fmt.Println("StorageNode error making dir", err.Error())
-		}
+		CheckSimpleErr(err2, nil, false)
 	}
 	httpVar.DirMutex.Unlock()
 }
@@ -78,38 +67,24 @@ func SNPutObj(w http.ResponseWriter, r *http.Request){
 		// Listen to tracker
 		if r.Method == http.MethodPost {
 			//var wg sync.WaitGroup		--> REPLICATION DISABLED
-
-
-
 			body, err := ioutil.ReadAll(r.Body)
-			if err != nil {
-				fmt.Println("error reading ", err)
-			}
-			if err := r.Body.Close(); err != nil {
-				fmt.Println("error body ", err)
-			}
-			if err := json.Unmarshal(body, &chunk); err != nil {
-				w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-				w.WriteHeader(422) // unprocessable entity
-				log.Println(err)
-				if err := json.NewEncoder(w).Encode(err); err != nil {
-					fmt.Println("error unmarshalling ", err)
-				}
-			}
+			CheckSimpleErr(err, nil, false)
 
+			err = r.Body.Close()
+			CheckSimpleErr(err, nil, false)
 
+			err = json.Unmarshal(body, &chunk)
+			CheckJsonErr(err, nil, w)
 
 			// Save chunk to file
 			err = ioutil.WriteFile(path + "/src/data/" + chunk.Hash + "/" + strconv.Itoa(nodeID) + "/NEW" + strconv.Itoa(chunk.Name), chunk.Text, 0777)
-			if err != nil {
-				fmt.Println("StorageNodeListen: error creating/writing file1", err.Error())
-			}
+			CheckSimpleErr(err, nil, false)
+
 			_, err = os.Stat(path + "/src/data/" + chunk.Hash + "/" + strconv.Itoa(nodeID) + "/NEW" + strconv.Itoa(chunk.Name))
 			for err != nil {
 				err = ioutil.WriteFile(path + "/src/data/" + chunk.Hash + "/" + strconv.Itoa(nodeID) + "/NEW" + strconv.Itoa(chunk.Name), chunk.Text, 0777)
-				if err != nil {
-					fmt.Println("SNPutObj: Peer: error creating/writing file p2p2", err.Error())
-				}
+				CheckSimpleErr(err, nil, false)
+
 				fmt.Println("for", chunk.Name)
 				_, err = os.Stat(path + "/src/data/" + chunk.Hash + "/" + strconv.Itoa(nodeID) + "/NEW" + strconv.Itoa(chunk.Name))
 
@@ -161,7 +136,7 @@ func SNPutObj(w http.ResponseWriter, r *http.Request){
 
 
 
-
+/*
 // Listen to other peers
 func SNPutObjP2PRequest(w http.ResponseWriter, r *http.Request) {
 	var path = os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore"
@@ -206,7 +181,7 @@ func SNPutObjP2PRequest(w http.ResponseWriter, r *http.Request) {
 
 	}
 }
-
+*/
 func SNObjGetChunks(w http.ResponseWriter, r *http.Request){
 	fmt.Println("GetChunks init.")
 	// Get node ID
@@ -215,24 +190,15 @@ func SNObjGetChunks(w http.ResponseWriter, r *http.Request){
 
 	var keyURL jsonKeyURL
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-	if err != nil {
-		panic(err)
-	}
-	if err := r.Body.Close(); err != nil {
-		panic(err)
-	}
+	CheckSimpleErr(err, nil, true)
 
-	if err := json.Unmarshal(body, &keyURL); err != nil {
-		fmt.Println("GetChunks error Unmashalling ",err.Error())
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(423) // unprocessable entity
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			fmt.Println("GetChunks: error unprocessable entity: ",err.Error())
-			return
-		}
+	err = r.Body.Close();
+	CheckSimpleErr(err, nil, true)
+
+	err = json.Unmarshal(body, &keyURL)
+	if CheckJsonErr(err, nil, w) {
 		return
 	}
-
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
@@ -266,39 +232,26 @@ func SNPutObjSendChunksToProxy(nodeID string, nodeList [][]string, key string, U
 			if strings.Contains(info.Name(),conf.ChunkProxyName) {
 				partBuffer:=make([]byte,info.Size())
 				file, err := os.Open(path)
-				if err != nil {
-					fmt.Println("sendChunksToProxy error opening file ",err.Error())
-					return nil
-				}
+				CheckSimpleErr(err, nil, true)
+
 				_, err = file.Read(partBuffer)
-				if err != nil {
-					fmt.Println("sendChunksToProxy error opening file ",err.Error())
-					return nil
-				}
+				CheckSimpleErr(err, nil, true)
+
 				m:=getMsg{Text:partBuffer, Name: info.Name(), NodeID:nodeID, NodeList:nodeList, Key:key, Parts:PartsNum, Parity:ParityNum, GetID:getID}
 				r, w :=io.Pipe()			// create pipe
 				go func() {
 					defer w.Close()			// close pipe when go routine finishes
 					// save buffer to object
 					err=json.NewEncoder(w).Encode(&m)
-					if err != nil {
-						fmt.Println("Error encoding to pipe ", err.Error())
-						return
-					}
+					CheckSimpleErr(err, nil, true)
 				}()
 				res, err := http.Post(proxyURL,"application/json", r )
-				if err != nil {
-					fmt.Println("sendChunksToProxy: error creating request: ",err.Error())
-					return nil
-				}
-				if err := res.Body.Close(); err != nil {
-					fmt.Println(err)
-					return nil
-				}
+				CheckSimpleErr(err, nil, true)
+
+				err = res.Body.Close()
+				CheckSimpleErr(err, nil, true)
 			}
 		}
-
-
 		return nil
 	})
 	(*httpVar.WaitingGroupNodes[getID]).Done()
@@ -315,20 +268,13 @@ func SNPutAcc(w http.ResponseWriter, r *http.Request){
 		var accInfo AccInfo
 		var peerID int = int(r.Host[len(r.Host) - 1] - '0')
 		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			fmt.Println("error reading ", err)
-		}
-		if err := r.Body.Close(); err != nil {
-			fmt.Println("error body ", err)
-		}
-		if err := json.Unmarshal(body, &accInfo); err != nil {
-			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			w.WriteHeader(422) // unprocessable entity
-			log.Println(err)
-			if err := json.NewEncoder(w).Encode(err); err != nil {
-				fmt.Println("error unmarshalling ", err)
-			}
-		}
+		CheckSimpleErr(err, nil, false)
+
+		err = r.Body.Close()
+		CheckSimpleErr(err, nil, false)
+
+		err = json.Unmarshal(body, &accInfo)
+		CheckJsonErr(err, nil, w)
 
 		// create new account
 		conts := make(map[string]Container)
@@ -357,16 +303,12 @@ func SNPutAcc(w http.ResponseWriter, r *http.Request){
 					go func() {
 						// save buffer to object
 						err = json.NewEncoder(w).Encode(marshalledAcc)
-						if err != nil {
-							fmt.Println("Error encoding to pipe ", err.Error())
-							return
-						}
+						CheckSimpleErr(err, nil, false)
 						defer w.Close()                        // close pipe //when go routine finishes
 					}()
 					response, err := http.Post(peerURL, "application/json", r)
-					if err != nil {
-						fmt.Println("Error sending http POST p2p", err.Error())
-					}
+					CheckSimpleErr(err, nil, false)
+
 					responseCode:=response.StatusCode
 					if responseCode == 201 {
 						fmt.Println(response.StatusCode," SN created")
@@ -427,49 +369,31 @@ func SNGetAcc(w http.ResponseWriter, r *http.Request){
 	var accInfo AccInfo
 	var peerID int = int(r.Host[len(r.Host) - 1] - '0')
 	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		fmt.Println("error reading ", err)
-	}
-	if err := r.Body.Close(); err != nil {
-		fmt.Println("error body ", err)
-	}
-	if err := json.Unmarshal(body, &accInfo); err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		log.Println(err)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			fmt.Println("error unmarshalling ", err)
-		}
-		return
-	}
+	CheckSimpleErr(err, nil, false)
 
+	err = r.Body.Close()
+	CheckSimpleErr(err, nil, false)
 
+	err = json.Unmarshal(body, &accInfo)
+	CheckJsonErr(err, nil, w)
 
 	var accPath string = (os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore")
 
 	// read account from file
 	httpVar.AccFileMutex.Lock()
 	accountBytes, err := ioutil.ReadFile(accPath+"/src/Account"+accInfo.AccName +strconv.Itoa(peerID))
-	if err != nil {
-		fmt.Println(accPath)
-		fmt.Println("SNGetAcc Error: reading ", accPath+"/src/Account"+accInfo.AccName +strconv.Itoa(peerID))
-	}
+	CheckSimpleErr(err, nil, false)
+
 	httpVar.AccFileMutex.Unlock()
 
 	account:=Account{}
 	_,err = account.UnmarshalMsg(accountBytes)
-	if err != nil {
-		fmt.Println("SNGetAcc: error Unmarshalling account")
-	}
+	CheckSimpleErr(err, nil, false)
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(account); err != nil {
-		fmt.Println("GetNodes: error encoding response: ",err.Error())
-	}
-
-
-
+	err = json.NewEncoder(w).Encode(account)
+	CheckSimpleErr(err, nil, false)
 }
 
 
@@ -479,31 +403,18 @@ func SNPutCont(w http.ResponseWriter, r *http.Request){
 		var accInfo AccInfo
 		var peerID int = int(r.Host[len(r.Host) - 1] - '0')
 		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			fmt.Println("error reading ", err)
-		}
-		if err := r.Body.Close(); err != nil {
-			fmt.Println("error body ", err)
-		}
-		if err := json.Unmarshal(body, &accInfo); err != nil {
-			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			w.WriteHeader(422) // unprocessable entity
-			log.Println(err)
-			if err := json.NewEncoder(w).Encode(err); err != nil {
-				fmt.Println("error unmarshalling ", err)
-			}
-		}
+		CheckSimpleErr(err, nil, false)
 
+		err = r.Body.Close()
+		CheckSimpleErr(err, nil, false)
 
-
-
+		err = json.Unmarshal(body, &accInfo)
+		CheckJsonErr(err, nil, w)
 
 		// read account from file
 		httpVar.AccFileMutex.Lock()
 		accountBytes, err := ioutil.ReadFile(path+"/src/Account"+accInfo.AccName +strconv.Itoa(peerID))
-		if err != nil {
-			fmt.Println("SNPutCont Error: reading ", path+"/src/Account"+accInfo.AccName +strconv.Itoa(peerID))
-		}
+		CheckSimpleErr(err, nil, false)
 
 		// update account
 		account:=Account{}
@@ -536,16 +447,11 @@ func SNPutCont(w http.ResponseWriter, r *http.Request){
 					go func() {
 						// save buffer to object
 						err = json.NewEncoder(w).Encode(marshalledAcc)
-						if err != nil {
-							fmt.Println("Error encoding to pipe ", err.Error())
-							return
-						}
+						CheckSimpleErr(err, nil, true)
 						defer w.Close()                        // close pipe when go routine finishes
 					}()
 					response, err := http.Post(peerURL, "application/json", r)
-					if err != nil {
-						fmt.Println("Error sending http POST p2p", err.Error())
-					}
+					CheckSimpleErr(err, nil, false)
 					responseCode:=response.StatusCode
 					if responseCode == 201 {
 						fmt.Println(response.StatusCode," SN created")
@@ -568,30 +474,18 @@ func checkAccCont(w http.ResponseWriter, r *http.Request){
 	var accInfo AccInfo
 	var peerID int = int(r.Host[len(r.Host) - 1] - '0')
 	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		fmt.Println("error reading ", err)
-	}
-	if err := r.Body.Close(); err != nil {
-		fmt.Println("error body ", err)
-	}
-	if err := json.Unmarshal(body, &accInfo); err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		log.Println(err)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			fmt.Println("error unmarshalling ", err)
-		}
-	}
+	CheckSimpleErr(err, nil, false)
 
+	err = r.Body.Close()
+	CheckSimpleErr(err, nil, false)
 
-
-
+	err = json.Unmarshal(body, &accInfo)
+	CheckJsonErr(err, nil, w)
 
 	// read account from file
 	accountBytes, err := ioutil.ReadFile(path+"/src/Account"+accInfo.AccName +strconv.Itoa(peerID))
-	if err != nil {
-		fmt.Println("SNPutCont Error: reading ", path+"/src/Account"+accInfo.AccName +strconv.Itoa(peerID))
-	}
+	CheckSimpleErr(err, nil, false)
+
 	account:=Account{}
 	_,err = account.UnmarshalMsg(accountBytes)
 	_, exists := account.Containers[accInfo.Container]
@@ -610,24 +504,13 @@ func addObjToCont(w http.ResponseWriter, r *http.Request){
 	var accInfo AccInfo
 	var peerID int = int(r.Host[len(r.Host) - 1] - '0')
 	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		fmt.Println("error reading ", err)
-	}
-	if err := r.Body.Close(); err != nil {
-		fmt.Println("error body ", err)
-	}
-	if err := json.Unmarshal(body, &accInfo); err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		log.Println(err)
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			fmt.Println("error unmarshalling ", err)
-		}
-	}
+	CheckSimpleErr(err, nil, false)
 
+	err = r.Body.Close()
+	CheckSimpleErr(err, nil, false)
 
-
-
+	err = json.Unmarshal(body, &accInfo)
+	CheckJsonErr(err, nil, w)
 
 	// read account from file
 	accountBytes, err := ioutil.ReadFile(path+"/src/Account"+accInfo.AccName +strconv.Itoa(peerID))
@@ -673,16 +556,12 @@ func addObjToCont(w http.ResponseWriter, r *http.Request){
 				go func() {
 					// save buffer to object
 					err = json.NewEncoder(w).Encode(marshalledAcc)
-					if err != nil {
-						fmt.Println("Error encoding to pipe ", err.Error())
-						return
-					}
+					CheckSimpleErr(err, nil, true)
 					defer w.Close()                        // close pipe //when go routine finishes
 				}()
 				response, err := http.Post(peerURL, "application/json", r)
-				if err != nil {
-					fmt.Println("Error sending http POST p2p", err.Error())
-				}
+				CheckSimpleErr(err, nil, false)
+
 				responseCode:=response.StatusCode
 				if responseCode == 201 {
 					fmt.Println(response.StatusCode," SN created")

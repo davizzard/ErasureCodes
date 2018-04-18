@@ -11,6 +11,8 @@ import (
 	"time"
 	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
 	"sync"
+	"net/http"
+	"encoding/json"
 )
 
 
@@ -143,7 +145,7 @@ func DecodeFileAPI(fname string, key string, dataShards int, parityShards int, s
 		}
 		err = enc.Reconstruct(shards, out)
 		if err != nil {
-			fmt.Println("Reconstruct failed -", err)
+			CheckSimpleErr(err, nil, false)
 			exitStatus = true
 			return exitStatus
 		}
@@ -250,6 +252,20 @@ func CheckComplexErr(err error, channel chan bool, fileToRemove string, fileToCl
 		if exit {
 			os.Exit(2)
 		}
+	}
+}
+
+func CheckJsonErr(err error, channel chan bool, w http.ResponseWriter) bool {
+	if err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		fmt.Println("Error: %s", err.Error())
+		err := json.NewEncoder(w).Encode(err)
+		CheckSimpleErr(err, channel, false)
+		channel <- false
+		return true
+	} else {
+		return false
 	}
 }
 

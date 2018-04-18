@@ -4,7 +4,6 @@ import (
 	"os"
 	"fmt"
 	"strconv"
-	"math"
 	"net/http"
 	"io"
 	"io/ioutil"
@@ -69,11 +68,8 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 		putOK <- false
 		return
 	}
-	if err := json.Unmarshal(body, &nodeList); err != nil {
-		fmt.Println("putObjProxy unmarshalling: error unprocessable entity: ", err.Error())
-		putOK <- false
-		return
-	}
+	err = json.Unmarshal(body, &nodeList)
+	CheckSimpleErr(err, putOK, true)
 
 
 
@@ -116,12 +112,8 @@ func PutObjProxy(filePath string, trackerAddr string, numNodes int, putOK chan b
 		putOK <- false
 		return
 	}
-	if err := json.Unmarshal(body, &nodeList); err != nil {
-		fmt.Println("Put: error unprocessable entity: ", err.Error())
-		fmt.Println("NODELIST: ",nodeList)
-		putOK <- false
-		return
-	}
+	err = json.Unmarshal(body, &nodeList)
+	CheckSimpleErr(err, putOK, true)
 
 	if len(nodeList)==0{
 		fmt.Println(" no such name ")
@@ -343,11 +335,8 @@ func GetObjProxy(fullName string, proxyAddr []string, trackerAddr string, getOK 
 		return
 	}
 	var nodeList [][]string
-	if err := json.Unmarshal(body, &nodeList); err != nil {
-		fmt.Println("GetObjProxy ",err)
-		getOK <- false
-		return
-	}
+	err = json.Unmarshal(body, &nodeList)
+	CheckSimpleErr(err, getOK, true)
 
 	// Create folder for receiving
 	os.Mkdir(os.Getenv("GOPATH")+"/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/local",+0777)
@@ -423,14 +412,8 @@ func ReturnObjProxy(w http.ResponseWriter, r *http.Request) {
 	if err := r.Body.Close(); err != nil {
 		fmt.Println("error body ", err)
 	}
-	if err := json.Unmarshal(body, &getmsg); err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		fmt.Println(err.Error())
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			fmt.Println("error unmarshalling ", err)
-		}
-	}
+	err = json.Unmarshal(body, &getmsg)
+	CheckJsonErr(err, nil, w)
 
 	// Update counter
 	httpVar.GetMutex.Lock()
@@ -449,7 +432,7 @@ CheckPieces walks through the subfiles directory, creates a new file to be fille
 and compares the new hash with the original one.
 @param path to the file we want to split
 Returns true if both hash are identic and false if not
-*/
+
 func CheckPiecesObj(key string ,fileName string, filePath string, numNodes int, hash string) bool{
 	 file, err := os.Open(filePath)
 	CheckSimpleErr(err, nil, true)
@@ -570,6 +553,7 @@ func CheckPiecesObj(key string ,fileName string, filePath string, numNodes int, 
 
 	return true
 }
+*/
 
 type AccInfo struct {
 	NodeList    [][]string	`json:"NodeList"`
@@ -610,12 +594,7 @@ func PutAccountProxy(name string, createOK chan bool){
 		createOK <- false
 		return
 	}
-	if err := json.Unmarshal(body, &nodeList); err != nil {
-		fmt.Println("Put: error unprocessable entity: ", err.Error())
-		fmt.Println("CreateAccountProxy: NODELIST: ", nodeList)
-		createOK <- false
-		return
-	}
+	err = json.Unmarshal(body, &nodeList)
 	CheckSimpleErr(err, createOK, true)
 
 	if len(nodeList)==0{
@@ -670,10 +649,8 @@ func GetAccountProxy(accountName string) Account{
 		fmt.Println(err)
 		return account
 	}
-	if err := json.Unmarshal(body, &nodeList); err != nil {
-		fmt.Println("GetAccountProxy: error unprocessable entity: ", err.Error())
-		return account
-	}
+	err = json.Unmarshal(body, &nodeList)
+	CheckSimpleErr(err, nil, true)
 
 	// Randomly choose one Storage Node and one of its addresses to request account
 	currentPeer:= rand.Intn(len(nodeList))
@@ -699,10 +676,9 @@ func GetAccountProxy(accountName string) Account{
 		return account
 	}
 
-	if err := json.Unmarshal(body, &account); err != nil {
-		fmt.Println("GetAccountProxy: error unprocessable entity: ", err.Error())
-		return account
-	}
+	err = json.Unmarshal(body, &account)
+	CheckSimpleErr(err, nil, true)
+
 	return account
 }
 
@@ -725,21 +701,15 @@ func PutContProxy(account string, container string, createOK chan bool){
 		return
 	}
 	body, err := ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
-	if err != nil {
-		fmt.Println(err)
-		createOK <- false
-		return
-	}
+	CheckSimpleErr(err, createOK, true)
+
 	if err := res.Body.Close(); err != nil {
 		fmt.Println(err)
 		createOK <- false
 		return
 	}
-	if err := json.Unmarshal(body, &nodeList); err != nil {
-		fmt.Println("putContProxy: error unprocessable entity: ", err.Error())
-		createOK <- false
-		return
-	}
+	err = json.Unmarshal(body, &nodeList)
+	CheckSimpleErr(err, nil, true)
 
 	// Randomly choose one Storage Node and one of its addresses to put container
 	currentPeer:= rand.Intn(len(nodeList))
@@ -780,18 +750,14 @@ func GetContProxy(accountName string, containerName string) Container{
 		return container
 	}
 	body, err := ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
-	if err != nil {
-		fmt.Println(err)
-		return container
-	}
+	CheckSimpleErr(err, nil, true)
+
 	if err := res.Body.Close(); err != nil {
 		fmt.Println(err)
 		return container
 	}
-	if err := json.Unmarshal(body, &nodeList); err != nil {
-		fmt.Println("GetAccountProxy: error unprocessable entity: ", err.Error())
-		return container
-	}
+	err = json.Unmarshal(body, &nodeList)
+	CheckSimpleErr(err, nil, true)
 
 	// Randomly choose one Storage Node and one of its addresses to request container
 	currentPeer:= rand.Intn(len(nodeList))
@@ -801,10 +767,8 @@ func GetContProxy(accountName string, containerName string) Container{
 
 
 	request, err = http.NewRequest("GET", "http://" + nodeList[currentPeer][currentPeerAddr] + "/SNGetAcc", reader)
-	if err != nil {
-		fmt.Println("Error sending http GET ", err.Error())
-		return container
-	}
+	CheckSimpleErr(err, nil, true)
+
 	res, err = http.DefaultClient.Do(request)
 	CheckSimpleErr(err, nil, true)
 
@@ -812,19 +776,15 @@ func GetContProxy(accountName string, containerName string) Container{
 		return container
 	}
 	body, err = ioutil.ReadAll(io.LimitReader(res.Body, 1048576))
-	if err != nil {
-		fmt.Println(err)
-		return container
-	}
+	CheckSimpleErr(err, nil, true)
+
 	if err := res.Body.Close(); err != nil {
 		fmt.Println(err)
 		return container
 	}
 
-	if err := json.Unmarshal(body, &account); err != nil {
-		fmt.Println("GetAccountProxy: error unprocessable entity: ", err.Error())
-		return container
-	}
+	err = json.Unmarshal(body, &account)
+	CheckSimpleErr(err, nil, true)
 
 	return account.Containers[containerName]
 }

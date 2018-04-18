@@ -4,8 +4,6 @@ import(
 	"fmt"
 	"os"
 	"io"
-	"crypto/md5"
-	"encoding/hex"
 	"github.com/davizzard/ErasureCodes/src/goObjStore/src/conf"
 	"time"
 	"sync"
@@ -25,13 +23,11 @@ func PutObjAPI(w http.ResponseWriter, r *http.Request){
 
 		// Creating temporary file to save received file (in the request body)
 		file, err := os.Create(os.Getenv("GOPATH") + "/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/" + addedResults )
-		if err != nil {
-			fmt.Println(err)
-		}
+		CheckSimpleErr(err, nil, true)
+
 		_, err = io.Copy(file, r.Body)
-		if err != nil {
-			fmt.Println(err)
-		}
+		CheckSimpleErr(err, nil, true)
+
 		file.Close()
 
 		// Creating a channel to control call
@@ -48,9 +44,7 @@ func PutObjAPI(w http.ResponseWriter, r *http.Request){
 
 		// Removing temporary file
 		os.Remove(os.Getenv("GOPATH") + "/src/github.com/davizzard/ErasureCodes/src/goObjStore/src/" + addedResults )
-		if err != nil {
-			fmt.Println(err)
-		}
+
 	}()
 	wg.Wait()
 	fmt.Println("PUT: ",time.Since(startPUT))
@@ -84,7 +78,7 @@ func GetObjAPI(w http.ResponseWriter, r *http.Request){
 }
 
 
-
+/*
 func md5String(str string) string{
 	hasher:=md5.New()
 	_, err:= hasher.Write([]byte(str))
@@ -93,7 +87,7 @@ func md5String(str string) string{
 	}
 	return hex.EncodeToString(hasher.Sum(nil))
 }
-
+*/
 func PutAccAPI(w http.ResponseWriter, r *http.Request){
 	var wg sync.WaitGroup
 	wg.Add(1)
