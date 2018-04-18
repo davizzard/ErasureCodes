@@ -26,15 +26,11 @@ func (z *Account) DecodeMsg(dc *msgp.Reader) (err error) {
 		switch msgp.UnsafeString(field) {
 		case "name":
 			z.Name, err = dc.ReadString()
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		case "containers":
 			var zb0002 uint32
 			zb0002, err = dc.ReadMapHeader()
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 			if z.Containers == nil && zb0002 > 0 {
 				z.Containers = make(map[string]Container, zb0002)
 			} else if len(z.Containers) > 0 {
@@ -47,13 +43,9 @@ func (z *Account) DecodeMsg(dc *msgp.Reader) (err error) {
 				var za0001 string
 				var za0002 Container
 				za0001, err = dc.ReadString()
-				if err != nil {
-					return
-				}
+				CheckSimpleErr(err, nil, true)
 				err = za0002.DecodeMsg(dc)
-				if err != nil {
-					return
-				}
+				CheckSimpleErr(err, nil, true)
 				z.Containers[za0001] = za0002
 			}
 		default:
@@ -71,31 +63,19 @@ func (z *Account) EncodeMsg(en *msgp.Writer) (err error) {
 	// map header, size 2
 	// write "name"
 	err = en.Append(0x82, 0xa4, 0x6e, 0x61, 0x6d, 0x65)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	err = en.WriteString(z.Name)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	// write "containers"
 	err = en.Append(0xaa, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x73)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	err = en.WriteMapHeader(uint32(len(z.Containers)))
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	for za0001, za0002 := range z.Containers {
 		err = en.WriteString(za0001)
-		if err != nil {
-			return
-		}
+		CheckSimpleErr(err, nil, true)
 		err = za0002.EncodeMsg(en)
-		if err != nil {
-			return
-		}
+		CheckSimpleErr(err, nil, true)
 	}
 	return
 }
@@ -113,9 +93,7 @@ func (z *Account) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001, za0002 := range z.Containers {
 		o = msgp.AppendString(o, za0001)
 		o, err = za0002.MarshalMsg(o)
-		if err != nil {
-			return
-		}
+		CheckSimpleErr(err, nil, true)
 	}
 	return
 }
@@ -132,21 +110,15 @@ func (z *Account) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
-		if err != nil {
-			return
-		}
+		CheckSimpleErr(err, nil, true)
 		switch msgp.UnsafeString(field) {
 		case "name":
 			z.Name, bts, err = msgp.ReadStringBytes(bts)
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		case "containers":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadMapHeaderBytes(bts)
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 			if z.Containers == nil && zb0002 > 0 {
 				z.Containers = make(map[string]Container, zb0002)
 			} else if len(z.Containers) > 0 {
@@ -159,20 +131,14 @@ func (z *Account) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				var za0002 Container
 				zb0002--
 				za0001, bts, err = msgp.ReadStringBytes(bts)
-				if err != nil {
-					return
-				}
+				CheckSimpleErr(err, nil, true)
 				bts, err = za0002.UnmarshalMsg(bts)
-				if err != nil {
-					return
-				}
+				CheckSimpleErr(err, nil, true)
 				z.Containers[za0001] = za0002
 			}
 		default:
 			bts, err = msgp.Skip(bts)
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		}
 	}
 	o = bts

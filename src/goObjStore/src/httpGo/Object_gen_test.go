@@ -14,21 +14,15 @@ import (
 func TestMarshalUnmarshalObject(t *testing.T) {
 	v := Object{}
 	bts, err := v.MarshalMsg(nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+	CheckSimpleErr(err, nil, true)
 	left, err := v.UnmarshalMsg(bts)
-	if err != nil {
-		t.Fatal(err)
-	}
+	CheckSimpleErr(err, nil, true)
 	if len(left) > 0 {
 		t.Errorf("%d bytes left over after UnmarshalMsg(): %q", len(left), left)
 	}
 
 	left, err = msgp.Skip(bts)
-	if err != nil {
-		t.Fatal(err)
-	}
+	CheckSimpleErr(err, nil, true)
 	if len(left) > 0 {
 		t.Errorf("%d bytes left over after Skip(): %q", len(left), left)
 	}
@@ -63,9 +57,7 @@ func BenchmarkUnmarshalObject(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, err := v.UnmarshalMsg(bts)
-		if err != nil {
-			b.Fatal(err)
-		}
+		CheckSimpleErr(err, nil, true)
 	}
 }
 
@@ -81,16 +73,12 @@ func TestEncodeDecodeObject(t *testing.T) {
 
 	vn := Object{}
 	err := msgp.Decode(&buf, &vn)
-	if err != nil {
-		t.Error(err)
-	}
+	CheckSimpleErr(err, nil, true)
 
 	buf.Reset()
 	msgp.Encode(&buf, &v)
 	err = msgp.NewReader(&buf).Skip()
-	if err != nil {
-		t.Error(err)
-	}
+	CheckSimpleErr(err, nil, true)
 }
 
 func BenchmarkEncodeObject(b *testing.B) {
@@ -118,8 +106,6 @@ func BenchmarkDecodeObject(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		err := v.DecodeMsg(dc)
-		if err != nil {
-			b.Fatal(err)
-		}
+		CheckSimpleErr(err, nil, true)
 	}
 }

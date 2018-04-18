@@ -14,27 +14,19 @@ func (z *Container) DecodeMsg(dc *msgp.Reader) (err error) {
 	_ = field
 	var zb0001 uint32
 	zb0001, err = dc.ReadMapHeader()
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	for zb0001 > 0 {
 		zb0001--
 		field, err = dc.ReadMapKeyPtr()
-		if err != nil {
-			return
-		}
+		CheckSimpleErr(err, nil, true)
 		switch msgp.UnsafeString(field) {
 		case "name":
 			z.Name, err = dc.ReadString()
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		case "objs":
 			var zb0002 uint32
 			zb0002, err = dc.ReadMapHeader()
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 			if z.Objs == nil && zb0002 > 0 {
 				z.Objs = make(map[string]Object, zb0002)
 			} else if len(z.Objs) > 0 {
@@ -47,25 +39,17 @@ func (z *Container) DecodeMsg(dc *msgp.Reader) (err error) {
 				var za0001 string
 				var za0002 Object
 				za0001, err = dc.ReadString()
-				if err != nil {
-					return
-				}
+				CheckSimpleErr(err, nil, true)
 				err = za0002.DecodeMsg(dc)
-				if err != nil {
-					return
-				}
+				CheckSimpleErr(err, nil, true)
 				z.Objs[za0001] = za0002
 			}
 		case "policy":
 			z.Policy, err = dc.ReadString()
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		default:
 			err = dc.Skip()
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		}
 	}
 	return
@@ -76,41 +60,25 @@ func (z *Container) EncodeMsg(en *msgp.Writer) (err error) {
 	// map header, size 3
 	// write "name"
 	err = en.Append(0x83, 0xa4, 0x6e, 0x61, 0x6d, 0x65)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	err = en.WriteString(z.Name)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	// write "objs"
 	err = en.Append(0xa4, 0x6f, 0x62, 0x6a, 0x73)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	err = en.WriteMapHeader(uint32(len(z.Objs)))
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	for za0001, za0002 := range z.Objs {
 		err = en.WriteString(za0001)
-		if err != nil {
-			return
-		}
+		CheckSimpleErr(err, nil, true)
 		err = za0002.EncodeMsg(en)
-		if err != nil {
-			return
-		}
+		CheckSimpleErr(err, nil, true)
 	}
 	// write "policy"
 	err = en.Append(0xa6, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	err = en.WriteString(z.Policy)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	return
 }
 
@@ -127,9 +95,7 @@ func (z *Container) MarshalMsg(b []byte) (o []byte, err error) {
 	for za0001, za0002 := range z.Objs {
 		o = msgp.AppendString(o, za0001)
 		o, err = za0002.MarshalMsg(o)
-		if err != nil {
-			return
-		}
+		CheckSimpleErr(err, nil, true)
 	}
 	// string "policy"
 	o = append(o, 0xa6, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79)
@@ -143,27 +109,19 @@ func (z *Container) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	_ = field
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
-		if err != nil {
-			return
-		}
+		CheckSimpleErr(err, nil, true)
 		switch msgp.UnsafeString(field) {
 		case "name":
 			z.Name, bts, err = msgp.ReadStringBytes(bts)
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		case "objs":
 			var zb0002 uint32
 			zb0002, bts, err = msgp.ReadMapHeaderBytes(bts)
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 			if z.Objs == nil && zb0002 > 0 {
 				z.Objs = make(map[string]Object, zb0002)
 			} else if len(z.Objs) > 0 {
@@ -176,25 +134,17 @@ func (z *Container) UnmarshalMsg(bts []byte) (o []byte, err error) {
 				var za0002 Object
 				zb0002--
 				za0001, bts, err = msgp.ReadStringBytes(bts)
-				if err != nil {
-					return
-				}
+				CheckSimpleErr(err, nil, true)
 				bts, err = za0002.UnmarshalMsg(bts)
-				if err != nil {
-					return
-				}
+				CheckSimpleErr(err, nil, true)
 				z.Objs[za0001] = za0002
 			}
 		case "policy":
 			z.Policy, bts, err = msgp.ReadStringBytes(bts)
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		default:
 			bts, err = msgp.Skip(bts)
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		}
 	}
 	o = bts

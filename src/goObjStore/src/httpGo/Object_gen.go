@@ -14,41 +14,27 @@ func (z *Object) DecodeMsg(dc *msgp.Reader) (err error) {
 	_ = field
 	var zb0001 uint32
 	zb0001, err = dc.ReadMapHeader()
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	for zb0001 > 0 {
 		zb0001--
 		field, err = dc.ReadMapKeyPtr()
-		if err != nil {
-			return
-		}
+		CheckSimpleErr(err, nil, true)
 		switch msgp.UnsafeString(field) {
 		case "name":
 			z.Name, err = dc.ReadString()
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		case "size":
 			z.Size, err = dc.ReadInt()
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		case "PartsNum":
 			z.PartsNum, err = dc.ReadInt()
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		case "ParityNum":
 			z.ParityNum, err = dc.ReadInt()
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		default:
 			err = dc.Skip()
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		}
 	}
 	return
@@ -59,40 +45,24 @@ func (z *Object) EncodeMsg(en *msgp.Writer) (err error) {
 	// map header, size 4
 	// write "name"
 	err = en.Append(0x84, 0xa4, 0x6e, 0x61, 0x6d, 0x65)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	err = en.WriteString(z.Name)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	// write "size"
 	err = en.Append(0xa4, 0x73, 0x69, 0x7a, 0x65)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	err = en.WriteInt(z.Size)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	// write "PartsNum"
 	err = en.Append(0xa8, 0x50, 0x61, 0x72, 0x74, 0x73, 0x4e, 0x75, 0x6d)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	err = en.WriteInt(z.PartsNum)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	// write "ParityNum"
 	err = en.Append(0xa9, 0x50, 0x61, 0x72, 0x69, 0x74, 0x79, 0x4e, 0x75, 0x6d)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	err = en.WriteInt(z.ParityNum)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	return
 }
 
@@ -121,41 +91,27 @@ func (z *Object) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	_ = field
 	var zb0001 uint32
 	zb0001, bts, err = msgp.ReadMapHeaderBytes(bts)
-	if err != nil {
-		return
-	}
+	CheckSimpleErr(err, nil, true)
 	for zb0001 > 0 {
 		zb0001--
 		field, bts, err = msgp.ReadMapKeyZC(bts)
-		if err != nil {
-			return
-		}
+		CheckSimpleErr(err, nil, true)
 		switch msgp.UnsafeString(field) {
 		case "name":
 			z.Name, bts, err = msgp.ReadStringBytes(bts)
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		case "size":
 			z.Size, bts, err = msgp.ReadIntBytes(bts)
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		case "PartsNum":
 			z.PartsNum, bts, err = msgp.ReadIntBytes(bts)
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		case "ParityNum":
 			z.ParityNum, bts, err = msgp.ReadIntBytes(bts)
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		default:
 			bts, err = msgp.Skip(bts)
-			if err != nil {
-				return
-			}
+			CheckSimpleErr(err, nil, true)
 		}
 	}
 	o = bts
