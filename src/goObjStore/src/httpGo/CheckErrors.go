@@ -11,7 +11,9 @@ import (
 func CheckSimpleErr(err error, channel chan bool, exit bool) bool {
 	if err != nil {
 		fmt.Println("Error: %s", err.Error())
-		channel <- false
+		if channel != nil {
+			channel <- false
+		}
 		if exit {
 			os.Exit(2)
 		}
@@ -47,7 +49,9 @@ func CheckJsonErr(err error, channel chan bool, w http.ResponseWriter) bool {
 		fmt.Println("Error: %s", err.Error())
 		err := json.NewEncoder(w).Encode(err)
 		CheckSimpleErr(err, channel, false)
-		channel <- false
+		if channel != nil {
+			channel <- false
+		}
 		return true
 	} else {
 		return false
@@ -57,7 +61,9 @@ func CheckJsonErr(err error, channel chan bool, w http.ResponseWriter) bool {
 func CheckLengthErr(lenght int, msg string, channel chan bool, exit bool) bool {
 	if lenght == 0 {
 		fmt.Println("Error: ", msg)
-		channel <- false
+		if channel != nil {
+			channel <- false
+		}
 		if exit {
 			os.Exit(2)
 		}
