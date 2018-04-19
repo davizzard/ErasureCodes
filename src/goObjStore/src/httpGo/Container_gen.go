@@ -24,9 +24,11 @@ func (z *Container) DecodeMsg(dc *msgp.Reader) (err error) {
 			z.Name, err = dc.ReadString()
 			CheckSimpleErr(err, nil, true)
 		case "objs":
+			/*
 			var zb0002 uint32
 			zb0002, err = dc.ReadMapHeader()
 			CheckSimpleErr(err, nil, true)
+
 			if z.Objs == nil && zb0002 > 0 {
 				z.Objs = make(map[string]Object, zb0002)
 			} else if len(z.Objs) > 0 {
@@ -34,6 +36,7 @@ func (z *Container) DecodeMsg(dc *msgp.Reader) (err error) {
 					delete(z.Objs, key)
 				}
 			}
+
 			for zb0002 > 0 {
 				zb0002--
 				var za0001 string
@@ -44,12 +47,13 @@ func (z *Container) DecodeMsg(dc *msgp.Reader) (err error) {
 				CheckSimpleErr(err, nil, true)
 				z.Objs[za0001] = za0002
 			}
+			*/
 		case "policy":
 			z.Policy, err = dc.ReadString()
 			CheckSimpleErr(err, nil, true)
 		default:
-			err = dc.Skip()
-			CheckSimpleErr(err, nil, true)
+			//err = dc.Skip()
+			//CheckSimpleErr(err, nil, true)
 		}
 	}
 	return
@@ -68,12 +72,14 @@ func (z *Container) EncodeMsg(en *msgp.Writer) (err error) {
 	CheckSimpleErr(err, nil, true)
 	err = en.WriteMapHeader(uint32(len(z.Objs)))
 	CheckSimpleErr(err, nil, true)
+	/*
 	for za0001, za0002 := range z.Objs {
 		err = en.WriteString(za0001)
 		CheckSimpleErr(err, nil, true)
 		err = za0002.EncodeMsg(en)
 		CheckSimpleErr(err, nil, true)
 	}
+	*/
 	// write "policy"
 	err = en.Append(0xa6, 0x70, 0x6f, 0x6c, 0x69, 0x63, 0x79)
 	CheckSimpleErr(err, nil, true)
@@ -143,8 +149,8 @@ func (z *Container) UnmarshalMsg(bts []byte) (o []byte, err error) {
 			z.Policy, bts, err = msgp.ReadStringBytes(bts)
 			CheckSimpleErr(err, nil, true)
 		default:
-			bts, err = msgp.Skip(bts)
-			CheckSimpleErr(err, nil, true)
+			//bts, err = msgp.Skip(bts)
+			//CheckSimpleErr(err, nil, true)
 		}
 	}
 	o = bts
