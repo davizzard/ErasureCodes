@@ -24,7 +24,7 @@ func (z *Account) DecodeMsg(dc *msgp.Reader) (err error) {
 			z.Name, err = dc.ReadString()
 			CheckSimpleErr(err, nil, true)
 		case "containers":
-			/*
+
 			var zb0002 uint32
 			zb0002, err = dc.ReadMapHeader()
 			CheckSimpleErr(err, nil, true)
@@ -36,6 +36,7 @@ func (z *Account) DecodeMsg(dc *msgp.Reader) (err error) {
 					delete(z.Containers, key)
 				}
 			}
+			/*
 			for zb0002 > 0 {
 				zb0002--
 				var za0001 string
